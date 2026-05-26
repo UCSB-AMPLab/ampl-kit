@@ -1,0 +1,107 @@
+/**
+ * AMPL design tokens and base layer
+ *
+ * This stylesheet is the single source of the AMPL visual language for every
+ * tool in the family. It declares the design tokens — the brand colours (led by
+ * the AMPL plum accent), the three font families, the full type ramp of sizes
+ * and line-heights, the corner radii, and the motion easing — as Tailwind theme
+ * variables, so the whole utility system speaks in AMPL terms. It then sets a
+ * small base layer of brand defaults the entire app inherits: the page
+ * background and text colour, the quiet typewriter body weight, the text
+ * selection colour, and the serif heading family. A consuming tool wires it in
+ * by importing it after Tailwind itself and pointing Tailwind at the kit so it
+ * can scan the shared classes; fonts are loaded separately via link tags, not
+ * a CSS import.
+ *
+ * Consumer wiring (in the tool's app/app.css):
+ *     @import "tailwindcss";                  // must come first
+ *     @import "@ampl/kit/theme.css";          // this file — extends Tailwind
+ *     @source "../node_modules/@ampl/kit";    // so Tailwind scans kit classes
+ *
+ * @version v0.1.0
+ */
+
+@theme {
+  /* ---------- Colors ---------- */
+  --color-bg:          #ffffff;   /* page / paper */
+  --color-bg-alt:      #f4f5f6;   /* raised surface: chips, code, panels */
+  --color-border:      #ECEDEF;   /* hairline divider */
+
+  --color-fg-1:        #202224;   /* primary text + headings */
+  --color-fg-2:        #6C7A89;   /* meta, secondary */
+  --color-fg-3:        #AEB3BB;   /* placeholder, faint labels */
+
+  --color-accent:      #A5469A;   /* THE AMPL plum — the single UI accent */
+  --color-accent-ink:  #8B467D;   /* footer band plum */
+  --color-accent-deep: #743A6A;   /* footer-bottom plum */
+
+  --color-hue-orange:  #D97743;   /* per-project accent override ONLY */
+  --color-hue-blue:    #3B6BA5;   /* per-project accent override ONLY */
+
+  --color-error:       #D64541;   /* validation only */
+
+  --color-ucsb-navy:   #003660;   /* UCSB wordmark lockup only */
+  --color-ucsb-gold:   #FEBC11;   /* UCSB wordmark lockup only */
+  /* Accent tints are opacity modifiers, not tokens:
+     bg-accent/8  bg-accent/14  bg-accent/20  text-accent/60 */
+
+  /* ---------- Font families ---------- */
+  --font-body:    "Ubuntu Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-title:   "Roboto Slab", "Produkt", Georgia, serif;
+  --font-display: "Silkscreen", ui-monospace, monospace;
+
+  /* ---------- Type ramp (size · line-height · tracking) ---------- */
+  --text-h1: 4rem;                    /* 64px */
+  --text-h1--line-height: 4.5rem;     /* 72 */
+  --text-h1--letter-spacing: -1.5px;
+  --text-h2: 3rem;                    /* 48 */
+  --text-h2--line-height: 3.5rem;     /* 56 */
+  --text-h2--letter-spacing: -1.6px;
+  --text-h3: 2.5rem;                  /* 40 */
+  --text-h3--line-height: 3rem;       /* 48 */
+  --text-h3--letter-spacing: -1.4px;
+  --text-h4: 2rem;                    /* 32 */
+  --text-h4--line-height: 2.25rem;    /* 36 */
+  --text-h4--letter-spacing: -1px;
+  --text-h5: 1.25rem;                 /* 20 */
+  --text-h5--line-height: 1.6;
+  --text-subtitle: 1.25rem;           /* 20 */
+  --text-subtitle--line-height: 1.75rem;   /* 28 */
+  --text-body: 1.125rem;              /* 18 */
+  --text-body--line-height: 1.75rem;       /* 28 */
+  --text-small: 1rem;                 /* 16 */
+  --text-small--line-height: 1.5rem;       /* 24 */
+  --text-label: 0.875rem;             /* 14 */
+  --text-label--line-height: 1rem;         /* 16 */
+  --text-label--letter-spacing: 0.8px;
+  --text-footnote: 0.8125rem;         /* 13 */
+  --text-footnote--line-height: 1.25rem;
+
+  /* ---------- Radii (everything not listed is square) ---------- */
+  --radius-sm:   8px;    /* tinted toggle / icon-close buttons, post-nav cards */
+  --radius-pill: 40px;   /* fill buttons (use rounded-pill) */
+
+  /* ---------- Motion ---------- */
+  --ease-brand: cubic-bezier(0.2, 0.3, 0, 1);  /* page-level transitions */
+}
+
+/* ============================================================
+   Base layer — brand defaults the whole app inherits.
+   ============================================================ */
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg-1);
+    font-family: var(--font-body);
+    font-weight: 200;            /* AMPL body weight — quiet, typewriter. Load-bearing. */
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--color-accent); color: var(--color-bg); }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-title);
+    font-weight: 500;
+    color: var(--color-fg-1);
+  }
+}
