@@ -1,0 +1,63 @@
+{
+  "name": "@ampl/kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared foundation for the AMPL tools suite: the ampl-auth Worker (ampl.tools/auth) + the @ampl/kit design system, surfaces, and session-validation helper consumed by every tool.",
+  "exports": {
+    "./ui": "./kit/ui/index.ts",
+    "./theme.css": "./kit/theme.css",
+    "./fonts": "./kit/fonts.ts",
+    "./locales/en": "./kit/locales/en.ts",
+    "./locales/es": "./kit/locales/es.ts",
+    "./auth": "./kit/auth/index.ts"
+  },
+  "comment:exports": "Consumed by other tools via git-dep. Ship source; consumers transpile via Vite (ssr.noExternal). The './auth' subpath provides the session-validation helper + the read-only AUTH_DB contract. The Worker app (app/, wrangler.jsonc name=ampl-auth) deploys independently.",
+  "scripts": {
+    "build": "react-router build && node scripts/rebase-client-assets.mjs",
+    "cf-typegen": "wrangler types",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:staging": "CLOUDFLARE_ENV=staging npm run build && wrangler deploy --env staging",
+    "dev": "react-router dev",
+    "postinstall": "npm run cf-typegen",
+    "preview": "npm run build && vite preview",
+    "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply AUTH_DB --local",
+    "db:migrate:prod": "wrangler d1 migrations apply AUTH_DB --remote",
+    "db:migrate:staging": "wrangler d1 migrations apply AUTH_DB --remote --env staging",
+    "secrets:list": "wrangler secret list",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
+    "arctic": "~3.7.0",
+    "drizzle-orm": "^0.45.1",
+    "i18next": "^26.0.6",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "isbot": "^5.1.31",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-i18next": "^17.0.4",
+    "react-router": "7.12.0",
+    "remix-i18next": "^7.5.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.13.7",
+    "@cloudflare/vitest-pool-workers": "^0.12.20",
+    "@react-router/dev": "7.12.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/node": "^22",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.9",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.40.2"
+  }
+}

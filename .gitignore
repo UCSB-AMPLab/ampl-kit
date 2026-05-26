@@ -1,0 +1,24 @@
+.DS_Store
+.env
+node_modules/
+*.tsbuildinfo
+
+# React Router
+.react-router/
+build/
+dist/
+
+# Cloudflare
+.mf
+.wrangler/
+.dev.vars
+# Note: .dev.vars.example is intentionally tracked — it documents required secret
+# names with empty values. Ignore environment-specific .dev.vars.<env> files but
+# NOT .dev.vars.example.
+.dev.vars.local
+.dev.vars.staging
+.dev.vars.production
+worker-configuration.d.ts
+
+# Test coverage
+coverage/

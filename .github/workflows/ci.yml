@@ -1,0 +1,48 @@
+name: CI
+#
+# Continuous-integration workflow
+#
+# This workflow is the automated quality gate that runs on every push and pull
+# request. It installs dependencies, generates the React Router route types,
+# type-checks the project, runs the full Vitest suite, builds the production
+# bundle, and finally checks that the English and Spanish translation files stay
+# at parity. Any failed step fails the build.
+#
+# Version: v0.1.0
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: typecheck + test + build + i18n parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # postinstall runs `cf-typegen` automatically — no separate step needed.
+      # But `react-router typegen` is NOT in postinstall; run it explicitly so tsc sees route types.
+      - name: Generate react-router types
+        run: npx react-router typegen
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Build
+        run: npm run build
+
+      - name: i18n parity (en-GB / es-CO)
+        run: node scripts/check-i18n-parity.mjs

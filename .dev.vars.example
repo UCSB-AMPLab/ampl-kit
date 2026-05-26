@@ -1,0 +1,12 @@
+# Copy to .dev.vars for local development. NEVER commit .dev.vars.
+#
+# ampl-auth secrets (populate from the AMPL GitHub OAuth app):
+#   GITHUB_CLIENT_ID      — from the AMPL GitHub OAuth app
+#   GITHUB_CLIENT_SECRET  — from the AMPL GitHub OAuth app
+#
+# No SESSION_SECRET: sessions are opaque random tokens stored as sha256 hashes
+# (no signing key), and the OAuth state/return_to cookies are validated
+# server-side, not signed.
+
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
