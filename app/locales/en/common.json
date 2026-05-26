@@ -1,0 +1,35 @@
+{
+  "oops": "Oops!",
+  "unexpectedError": "An unexpected error occurred.",
+  "notFound": "404",
+  "notFoundMessage": "The requested page could not be found.",
+  "forbidden": "Access denied",
+  "forbiddenMessage": "You don't have permission to view this page.",
+  "errorLabel": "Error",
+  "backToHome": "Back to home",
+  "header": {
+    "appName": "AMPL Auth"
+  },
+  "login": {
+    "title": "Sign in",
+    "continueWithGithub": "Continue with GitHub"
+  },
+  "signedIn": {
+    "welcome": "Welcome, {{name}}",
+    "zeroMembershipsBody": "Groups and manuscripts unlock once an instructor invites you.",
+    "title": "You're signed in",
+    "body": "You are signed in to the AMPL tools suite.",
+    "returnPrompt": "Return to your tool"
+  },
+  "signedOut": {
+    "title": "Sign in to AMPL",
+    "body": "Sign in with GitHub to access the AMPL tools suite."
+  },
+  "errors": {
+    "oauth-failed": "Sign-in failed. Please try again.",
+    "oauth-cancelled": "Sign-in was cancelled.",
+    "state-mismatch": "The sign-in session expired. Please try again.",
+    "no-verified-email": "Your GitHub account must have a verified primary email address.",
+    "rate-limited": "Too many requests. Please wait a moment and try again."
+  }
+}

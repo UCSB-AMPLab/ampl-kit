@@ -1,0 +1,23 @@
+/**
+ * App stylesheet entry point
+ *
+ * This stylesheet is the root CSS this tool actually loads, and its whole job is
+ * to assemble the styling stack in the right order. It pulls in Tailwind first,
+ * then layers the shared AMPL theme on top so the brand tokens and base styles
+ * apply, and finally tells Tailwind where to look for class names so it only
+ * generates the utilities the code uses. Because this tool develops the shared
+ * kit in the same repository, it points the scanner at the local `../kit`
+ * folder rather than the published package that an outside consumer would use.
+ *
+ * @version v0.1.0
+ */
+
+/* @import must precede @theme — Tailwind v4 ordering rule. */
+@import "tailwindcss";
+/* Import the kit token layer. Resolved via resolve.alias -> kit/theme.css. */
+@import "@ampl/kit/theme.css";
+/* Tell Tailwind to scan kit/ for class usage.
+   Path is relative to THIS FILE (app/app.css). kit/ is at ../kit from app/.
+   IMPORTANT: use ../kit (in-repo dogfooding path), NOT ../node_modules/@ampl/kit
+   which is the external-consumer instruction in kit/theme.css header. */
+@source "../kit";

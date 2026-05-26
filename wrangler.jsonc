@@ -1,0 +1,77 @@
+// Cloudflare Workers configuration (ampl-auth)
+//
+// This file tells Wrangler how to build, deploy, and bind the `ampl-auth`
+// Worker. It maps the Worker to the `ampl.tools/auth` route, declares the
+// production D1 database (`AUTH_DB`) and the per-IP rate limiter, sets the
+// public app name and URL, and defines a separate `staging` environment that
+// runs at its own workers.dev URL against a staging database. Secrets
+// (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) are set per environment with
+// `wrangler secret put`, never stored here.
+//
+// Version: v0.1.0
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ampl-auth",
+  "compatibility_date": "2026-04-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./workers/app.ts",
+  // Served at ampl.tools/auth (shared AMPL sign-in). The apex needs a proxied
+  // DNS record for this route to receive traffic. `workers_dev` is disabled in
+  // production so the Worker is reachable only via the route. account_id is
+  // resolved from CLOUDFLARE_ACCOUNT_ID.
+  "routes": [
+    { "pattern": "ampl.tools/auth*", "zone_name": "ampl.tools" }
+  ],
+  "workers_dev": false,
+  // Secrets (per-env via `wrangler secret put`): GITHUB_CLIENT_ID,
+  // GITHUB_CLIENT_SECRET. See .dev.vars.example. (No SESSION_SECRET — opaque
+  // hashed sessions need no signing key; OAuth cookies are validated, not signed.)
+  "vars": {
+    "APP_NAME": "AMPL Auth",
+    "APP_URL": "https://ampl.tools/auth"
+  },
+  "ratelimits": [
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "1",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "ampl-auth-db",
+      "database_id": "3236f46a-d261-4993-8bad-f8da485acd2a",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "ampl-auth-staging",
+      // No ampl.tools route on staging; lives only at its workers.dev URL.
+      // routes:[] is explicit — the Vite plugin otherwise merges top-level
+      // routes into named envs.
+      "routes": [],
+      "workers_dev": true,
+      "vars": {
+        "APP_NAME": "AMPL Auth [Staging]",
+        "APP_URL": "https://ampl-auth-staging.neogranadina.workers.dev"
+      },
+      "ratelimits": [
+        {
+          "name": "AUTH_RATE_LIMITER",
+          "namespace_id": "2",
+          "simple": { "limit": 5, "period": 60 }
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "AUTH_DB",
+          "database_name": "ampl-auth-staging-db",
+          "database_id": "2cd4ddc2-ed91-4bf9-9a3f-1d8f0f1f502f",
+          "migrations_dir": "drizzle"
+        }
+      ]
+    }
+  }
+}

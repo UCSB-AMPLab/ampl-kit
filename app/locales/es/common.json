@@ -1,0 +1,35 @@
+{
+  "oops": "¡Ups!",
+  "unexpectedError": "Ocurrió un error inesperado.",
+  "notFound": "404",
+  "notFoundMessage": "No se encontró la página solicitada.",
+  "forbidden": "Acceso denegado",
+  "forbiddenMessage": "No tienes permiso para ver esta página.",
+  "errorLabel": "Error",
+  "backToHome": "Volver al inicio",
+  "header": {
+    "appName": "AMPL Auth"
+  },
+  "login": {
+    "title": "Iniciar sesión",
+    "continueWithGithub": "Continuar con GitHub"
+  },
+  "signedIn": {
+    "welcome": "Bienvenido/a, {{name}}",
+    "zeroMembershipsBody": "Los grupos y manuscritos se desbloquean cuando un instructor te invite.",
+    "title": "Ya iniciaste sesión",
+    "body": "Tienes sesión activa en las herramientas de AMPL.",
+    "returnPrompt": "Volver a tu herramienta"
+  },
+  "signedOut": {
+    "title": "Inicia sesión en AMPL",
+    "body": "Inicia sesión con GitHub para acceder a las herramientas de AMPL."
+  },
+  "errors": {
+    "oauth-failed": "El inicio de sesión falló. Por favor, inténtalo de nuevo.",
+    "oauth-cancelled": "Cancelaste el inicio de sesión.",
+    "state-mismatch": "La sesión de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
+    "no-verified-email": "Tu cuenta de GitHub debe tener una dirección de correo primaria verificada.",
+    "rate-limited": "Demasiadas solicitudes. Por favor, espera un momento antes de intentarlo de nuevo."
+  }
+}
