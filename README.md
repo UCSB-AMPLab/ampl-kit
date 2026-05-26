@@ -46,7 +46,7 @@ source through Vite:
 ```jsonc
 // package.json
 "dependencies": {
-  "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.1.0"
+  "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.1.1"
 }
 ```
 
