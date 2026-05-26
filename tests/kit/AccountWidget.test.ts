@@ -2,17 +2,20 @@
  * AccountWidget rendering tests
  *
  * These tests cover `kit/ui/AccountWidget` — the small signed-in widget that
- * shows a user's avatar and a sign-out link. They render it to a string on the
- * server and check the resulting HTML: that a real avatar URL becomes an
- * `<img>` with that exact `src`, that the sign-out link points at the href it
- * was given, and that a missing avatar produces a placeholder rather than a
+ * shows a user's avatar and a sign-out control. They render it to a string on
+ * the server and check the resulting HTML: that a real avatar URL becomes an
+ * `<img>` with that exact `src`, that sign-out is a POST `<form>` whose action
+ * is the href it was given (driven by a submit `<button>`, never a GET `<a>`,
+ * because every logout endpoint is action-only and a GET anchor can't drive a
+ * POST), that an optional `returnTo` is appended to the action as a guarded
+ * query param, and that a missing avatar produces a placeholder rather than a
  * broken image. They render with `renderToString` and `StaticRouter` rather
  * than a browser DOM, so no `jsdom` or testing-library dependency is needed.
  * Because the Workers test pool has no i18n provider wired in, translated text
  * falls back to its key name — so these assertions stick to structural HTML,
  * not copy.
  *
- * @version v0.1.0
+ * @version v0.1.1
  */
 
 import { describe, it, expect } from "vitest";
@@ -42,7 +45,7 @@ describe("AccountWidget", () => {
     expect(html).toContain(`src="${AVATAR_URL}"`);
   });
 
-  it("AW2: renders the sign-out link with the passed signOutHref", async () => {
+  it("AW2: renders sign-out as a POST form whose action is the passed signOutHref", async () => {
     const { AccountWidget } = await import("kit/ui/AccountWidget");
     const { StaticRouter } = await import("react-router");
 
@@ -59,7 +62,56 @@ describe("AccountWidget", () => {
       ),
     );
 
-    expect(html).toContain('href="/auth/logout"');
+    expect(html).toContain('method="post"');
+    expect(html).toContain('action="/auth/logout"');
+  });
+
+  it("AW4: drives sign-out with a submit button, never a GET <a> anchor", async () => {
+    // Regression guard: a GET <a href> can't drive the POST-only /auth/logout
+    // action (GET returns 405), so clicking it was a no-op. Sign-out must be a
+    // submit button inside a POST form, with no anchor pointing at the href.
+    const { AccountWidget } = await import("kit/ui/AccountWidget");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(AccountWidget, {
+          name: "Ada",
+          handle: "ada",
+          avatarUrl: AVATAR_URL,
+          signOutHref: "/auth/logout",
+        }),
+      ),
+    );
+
+    expect(html).toContain("<form");
+    expect(html).toContain('type="submit"');
+    expect(html).not.toContain('href="/auth/logout"');
+  });
+
+  it("AW5: appends an optional returnTo to the form action as a guarded query param", async () => {
+    const { AccountWidget } = await import("kit/ui/AccountWidget");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(AccountWidget, {
+          name: "Ada",
+          handle: "ada",
+          avatarUrl: AVATAR_URL,
+          signOutHref: "/auth/logout",
+          returnTo: "/palaeography",
+        }),
+      ),
+    );
+
+    // URL-encoded so the logout route's searchParams.get("return_to") decodes
+    // it back to "/palaeography".
+    expect(html).toContain('action="/auth/logout?return_to=%2Fpalaeography"');
   });
 
   it("AW3: renders no <img when avatarUrl is null (placeholder div instead)", async () => {
