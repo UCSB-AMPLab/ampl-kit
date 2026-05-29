@@ -60,8 +60,17 @@ export async function handleWebhook(
     // 3. Verify Svix signature BEFORE any DB write. The secret is provisioned
     //    via `wrangler secret put`; not auto-typed on Env.
     const { RESEND_WEBHOOK_SECRET } = env as unknown as {
-      RESEND_WEBHOOK_SECRET: string;
+      RESEND_WEBHOOK_SECRET?: string;
     };
+    // Fail closed on a misconfigured environment: an unset secret must reject
+    // the event (server error) rather than reach signature verification with an
+    // empty key. Never accept an unverified webhook.
+    if (!RESEND_WEBHOOK_SECRET) {
+      logError(new Error("RESEND_WEBHOOK_SECRET missing"), {
+        action: "email.webhook.secret",
+      });
+      return new Response("Internal Server Error", { status: 500 });
+    }
     const valid = await verifySvixSignature(
       rawBody,
       request.headers,

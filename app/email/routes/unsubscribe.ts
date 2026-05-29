@@ -278,8 +278,17 @@ export async function handleUnsubscribe(
       // Verify the HMAC token — returns null if invalid. The secret is
       // provisioned via `wrangler secret put`; not auto-typed on Env.
       const { UNSUB_HMAC_SECRET } = env as unknown as {
-        UNSUB_HMAC_SECRET: string;
+        UNSUB_HMAC_SECRET?: string;
       };
+      // Fail closed on a misconfigured environment: an unset secret must reject
+      // the request (server error) rather than verify the token under an empty
+      // HMAC key.
+      if (!UNSUB_HMAC_SECRET) {
+        logError(new Error("UNSUB_HMAC_SECRET missing"), {
+          action: "email.unsubscribe.secret",
+        });
+        return new Response("Internal Server Error", { status: 500 });
+      }
       const address = await verifyUnsubToken(token, UNSUB_HMAC_SECRET);
       if (!address) {
         return new Response("Forbidden: invalid token", { status: 403 });

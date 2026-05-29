@@ -205,3 +205,77 @@ describe("handleUnsubscribe — POST", () => {
     expect(res.status).toBe(429);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Missing-secret fail-closed guard
+//
+// If UNSUB_HMAC_SECRET is unset, the runtime would coerce `undefined` to the
+// guessable string "undefined" as the HMAC key — an attacker could then forge
+// a token with that known key and suppress an arbitrary address. The handler
+// must refuse to process the request (500, no DB write) rather than verify a
+// token under a guessable key.
+// ---------------------------------------------------------------------------
+
+describe("handleUnsubscribe — missing UNSUB_HMAC_SECRET", () => {
+  it("returns 500 and writes no suppressions row when the secret is unset", async () => {
+    const address = `missing-unsub-secret-${Date.now()}@example.com`;
+    // A token that WOULD verify under the real secret; the guard must fire first.
+    const token = await signUnsubToken(address, env.UNSUB_HMAC_SECRET);
+    const noSecretEnv = {
+      ...env,
+      UNSUB_HMAC_SECRET: undefined,
+    } as unknown as Env;
+
+    const req = new Request("https://ampl.tools/email/unsubscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": `10.9.1.${Date.now() % 200}`,
+      },
+      body: new URLSearchParams({ token }).toString(),
+    });
+    const res = await handleUnsubscribe(req, noSecretEnv);
+
+    expect(res.status).toBe(500);
+
+    const db = getEmailDb();
+    const row = await db
+      .select()
+      .from(schema.suppressions)
+      .where(eq(schema.suppressions.address, address))
+      .get();
+    expect(row).toBeUndefined();
+  });
+
+  it("rejects a token forged with the guessable 'undefined' key when the secret is unset", async () => {
+    const address = `weak-key-forge-${Date.now()}@example.com`;
+    // The attack: with the secret unset, an unguarded handler would HMAC with
+    // the literal "undefined". The attacker forges a token using that key.
+    const forged = await signUnsubToken(address, "undefined");
+    const noSecretEnv = {
+      ...env,
+      UNSUB_HMAC_SECRET: undefined,
+    } as unknown as Env;
+
+    const req = new Request("https://ampl.tools/email/unsubscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Connecting-IP": `10.9.2.${Date.now() % 200}`,
+      },
+      body: new URLSearchParams({ token: forged }).toString(),
+    });
+    const res = await handleUnsubscribe(req, noSecretEnv);
+
+    // Must NOT be a 200 suppression — the guard fails closed before verifying.
+    expect(res.status).toBe(500);
+
+    const db = getEmailDb();
+    const row = await db
+      .select()
+      .from(schema.suppressions)
+      .where(eq(schema.suppressions.address, address))
+      .get();
+    expect(row).toBeUndefined();
+  });
+});
