@@ -18,23 +18,29 @@ import { useTranslation } from "react-i18next";
  *
  * Props contract:
  *   name        — display name from users table
- *   handle      — GitHub handle (without @)
+ *   handle      — (optional) GitHub handle (without @); when absent or empty
+ *                 the @handle line is not rendered at all
  *   avatarUrl   — GitHub avatar URL, or null (placeholder rendered)
- *   signOutHref — the POST logout endpoint, e.g. withBase("/logout")
+ *   signOutHref — (optional) the POST logout endpoint; defaults to the
+ *                 root-relative literal "/auth/logout" so a consumer tool
+ *                 wired to the apex origin needs no href argument.
+ *                 Override for non-standard basenames or dev environments.
+ *                 A browser form action does not suffer RR v7 basename
+ *                 double-prefix, so a root-relative literal is correct here.
  *   returnTo    — optional post-logout destination; appended to the action as a
  *                 ?return_to= query param (the logout route reads it from the
  *                 query string and guards it with safeReturnTo). A POST form
  *                 preserves its action URL's query string, so this reaches the
  *                 route; a hidden input would land in the body and be ignored.
  *
- * @version v0.1.1
+ * @version v0.1.2
  */
 
 type AccountWidgetProps = {
   name: string;
-  handle: string;
+  handle?: string;
   avatarUrl: string | null;
-  signOutHref: string;
+  signOutHref?: string;
   returnTo?: string;
 };
 
@@ -55,7 +61,7 @@ export function AccountWidget({
   name,
   handle,
   avatarUrl,
-  signOutHref,
+  signOutHref = "/auth/logout",
   returnTo,
 }: AccountWidgetProps) {
   const { t } = useTranslation("kit");
@@ -75,7 +81,9 @@ export function AccountWidget({
       )}
       <div className="flex flex-col">
         <span className="font-body font-medium text-fg-1">{name}</span>
-        <span className="font-body text-small text-fg-2">@{handle}</span>
+        {handle && (
+          <span className="font-body text-small text-fg-2">@{handle}</span>
+        )}
       </div>
       <form method="post" action={signOutAction} className="ml-auto">
         <button
