@@ -31,5 +31,12 @@
     "state-mismatch": "La sesión de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
     "no-verified-email": "Tu cuenta de GitHub debe tener una dirección de correo primaria verificada.",
     "rate-limited": "Demasiadas solicitudes. Por favor, espera un momento antes de intentarlo de nuevo."
+  },
+  "nav": {
+    "ariaLabel": "Navegación del sitio del laboratorio",
+    "tools": "Herramientas",
+    "projects": "Proyectos",
+    "opportunities": "Oportunidades",
+    "people": "Personas"
   }
 }

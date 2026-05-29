@@ -11,7 +11,10 @@
  * its key name — the assertions match either the key or its translation and
  * lean on structural HTML rather than the exact wording.
  *
- * @version v0.1.0
+ * The final two cases cover the sign-in button restyle: it must use the kit
+ * `dark` variant (bg-[#24292e]) and contain an inline Octocat SVG.
+ *
+ * @version v0.2.0
  */
 
 import { describe, it, expect } from "vitest";
@@ -19,7 +22,7 @@ import { renderToString } from "react-dom/server";
 import React from "react";
 
 describe("auth.login page", () => {
-  it("L1: renders GitHub link and button text (or i18n key fallback)", async () => {
+  it("renders GitHub link and button text (or i18n key fallback)", async () => {
     const { default: LoginPage } = await import("~/routes/auth.login");
     const { StaticRouter } = await import("react-router");
 
@@ -42,7 +45,7 @@ describe("auth.login page", () => {
     expect(html).not.toContain('role="alert"');
   });
 
-  it("L2: ?error=state-mismatch renders an error alert element", async () => {
+  it("?error=state-mismatch renders an error alert element", async () => {
     const { default: LoginPage } = await import("~/routes/auth.login");
     const { StaticRouter } = await import("react-router");
 
@@ -60,7 +63,7 @@ describe("auth.login page", () => {
     expect(html).toContain('href="/auth/github"');
   });
 
-  it("L3: ?error=rate-limited renders an error alert element", async () => {
+  it("?error=rate-limited renders an error alert element", async () => {
     const { default: LoginPage } = await import("~/routes/auth.login");
     const { StaticRouter } = await import("react-router");
 
@@ -75,6 +78,43 @@ describe("auth.login page", () => {
     // An error alert element must appear when ?error= is present
     expect(html).toContain('role="alert"');
     // The GitHub link is still rendered
+    expect(html).toContain('href="/auth/github"');
+  });
+
+  it("sign-in button uses the dark variant", async () => {
+    const { default: LoginPage } = await import("~/routes/auth.login");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/login" },
+        React.createElement(LoginPage as React.ComponentType),
+      ),
+    );
+
+    // The dark variant renders with GitHub-dark background class bg-[#24292e]
+    // (the class string added to Button in 05-01 for the dark variant)
+    expect(html).toContain("bg-[#24292e]");
+  });
+
+  it("sign-in button contains an inline Octocat SVG", async () => {
+    const { default: LoginPage } = await import("~/routes/auth.login");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/login" },
+        React.createElement(LoginPage as React.ComponentType),
+      ),
+    );
+
+    // An inline SVG element with a viewBox is rendered inside the button —
+    // this is the Octocat mark, added inline with no new runtime dependency
+    expect(html).toContain("<svg");
+    expect(html).toContain('viewBox="0 0 98 96"');
+    // The link still goes to /auth/github (auth flow unchanged)
     expect(html).toContain('href="/auth/github"');
   });
 });

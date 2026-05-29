@@ -9,9 +9,9 @@ import { ReportProblem } from "./ReportProblem";
  * This file renders the shared institutional footer that anchors the bottom of
  * every AMPL tool. It is two full-width plum bands: an upper band carrying the
  * UCSB wordmark, the lab's name and postal address, and the CLAIR logo; and a
- * lower band carrying the Regents copyright line and the two statutory links
+ * lower band carrying the lab copyright line and the two statutory links
  * (terms of use and accessibility). Only those two link labels are translated —
- * the lab name, address, and Regents wording stay in English in both languages
+ * the lab name, address, and copyright wording stay in English in both languages
  * — and the copyright year is computed at render time rather than hard-coded.
  * The "report a problem" trigger sits in the left column beneath the address.
  * The logos are loaded as image files rather than inline SVGs to fit the build
@@ -28,7 +28,7 @@ export function SiteFooter() {
     <footer>
       {/* Band 1 — institutional lockups — bg-accent-ink (#8B467D) */}
       <div className="bg-accent-ink text-bg">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-10 px-7.5 py-16 md:grid-cols-2 md:py-20">
+        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-start gap-7.5 px-7.5 py-16 md:grid-cols-2 md:py-20">
           {/* Left — AMPL lockup: UCSB wordmark + lab name + address */}
           <div className="justify-self-start">
             <img
@@ -36,15 +36,15 @@ export function SiteFooter() {
               alt="University of California, Santa Barbara"
               className="h-auto w-full max-w-[342px]"
             />
-            <p className="mt-3 font-title text-[30px] font-normal leading-none">
+            <p className="mt-3 font-title text-[30px] font-normal leading-[30px] tracking-[-0.6px]">
               Archives, Memory,
               <br />
               and Preservation Lab
             </p>
-            <address className="mt-3 text-sm not-italic leading-6">
+            <address className="mt-3 font-ui text-[18px] not-italic leading-6">
               <a
                 href="https://ampl.clair.ucsb.edu/map"
-                className="hover:underline"
+                className="border-b-2 border-dotted border-fg-3 hover:border-bg"
               >
                 2313 Girvetz Hall
               </a>
@@ -70,17 +70,16 @@ export function SiteFooter() {
             <img
               src={clairLogo}
               alt=""
-              className="h-auto w-full max-w-[80%]"
+              className="h-auto w-[436px] max-w-full"
             />
           </a>
         </div>
       </div>
 
-      {/* Band 2 — Regents copyright strip — bg-accent-deep (#743A6A) */}
+      {/* Band 2 — lab copyright strip — bg-accent-deep (#743A6A) */}
       <div className="bg-accent-deep text-bg">
-        <div className="mx-auto max-w-[1200px] px-5 pt-4 pb-12 text-xs">
-          Copyright © {year} The Regents of the University of California. All
-          Rights Reserved.
+        <div className="mx-auto max-w-[1200px] px-5 pt-4 pb-12 font-ui text-xs">
+          © {year} Archives, Memory, and Preservation Lab
           <a
             href="https://www.ucsb.edu/terms-of-use"
             className="ml-4 font-medium hover:underline"

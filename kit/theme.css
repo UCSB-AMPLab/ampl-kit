@@ -49,6 +49,9 @@
   --font-body:    "Ubuntu Mono", ui-monospace, Menlo, Consolas, monospace;
   --font-title:   "Roboto Slab", "Produkt", Georgia, serif;
   --font-display: "Silkscreen", ui-monospace, monospace;
+  /* Institutional sans — matches the lab site's footer body type (Avenir),
+     a system-font stack (no webfont load). Footer chrome only, not tool content. */
+  --font-ui:      "Avenir", "Century Gothic", sans-serif;
 
   /* ---------- Type ramp (size · line-height · tracking) ---------- */
   --text-h1: 4rem;                    /* 64px */

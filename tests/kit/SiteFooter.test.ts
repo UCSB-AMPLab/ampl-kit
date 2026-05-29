@@ -18,7 +18,7 @@ import { renderToString } from "react-dom/server";
 import React from "react";
 
 describe("SiteFooter", () => {
-  it("SF1: SSR output contains the report-a-problem trigger (key or translation)", async () => {
+  it("SSR output contains the report-a-problem trigger (key or translation)", async () => {
     const { SiteFooter } = await import("kit/ui/SiteFooter");
     const { StaticRouter } = await import("react-router");
 
@@ -35,7 +35,7 @@ describe("SiteFooter", () => {
     expect(html).toMatch(/reportProblem\.trigger|Report a problem/i);
   });
 
-  it("SF2: SSR output contains the footer terms key (or translation)", async () => {
+  it("SSR output contains the footer terms key (or translation)", async () => {
     const { SiteFooter } = await import("kit/ui/SiteFooter");
     const { StaticRouter } = await import("react-router");
 
@@ -51,7 +51,7 @@ describe("SiteFooter", () => {
     expect(html).toMatch(/footer\.terms|Terms of Use/i);
   });
 
-  it("SF3: SSR output contains a <dialog element (ReportProblem modal markup)", async () => {
+  it("SSR output contains a <dialog element (ReportProblem modal markup)", async () => {
     const { SiteFooter } = await import("kit/ui/SiteFooter");
     const { StaticRouter } = await import("react-router");
 
@@ -65,5 +65,75 @@ describe("SiteFooter", () => {
 
     // ReportProblem renders a native <dialog> — it must be present in SSR output
     expect(html).toContain("<dialog");
+  });
+
+  // Band 2 update assertions
+
+  it("band 2 contains the lab copyright line", async () => {
+    const { SiteFooter } = await import("kit/ui/SiteFooter");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(SiteFooter),
+      ),
+    );
+
+    // Band 2 must contain the lab name (not the Regents line)
+    expect(html).toContain("Archives, Memory, and Preservation Lab");
+  });
+
+  it("band 2 does NOT contain the Regents copyright line", async () => {
+    const { SiteFooter } = await import("kit/ui/SiteFooter");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(SiteFooter),
+      ),
+    );
+
+    // The Regents line must be gone
+    expect(html).not.toContain("Regents of the University of California");
+  });
+
+  it("band 2 retains both statutory links", async () => {
+    const { SiteFooter } = await import("kit/ui/SiteFooter");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(SiteFooter),
+      ),
+    );
+
+    // Terms of Use and Accessibility links must be retained
+    expect(html).toContain("https://www.ucsb.edu/terms-of-use");
+    expect(html).toContain("https://clair.ucsb.edu/accessibility");
+  });
+
+  it("band 2 contains the current year adjacent to the copyright symbol", async () => {
+    const { SiteFooter } = await import("kit/ui/SiteFooter");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(SiteFooter),
+      ),
+    );
+
+    // The render-time year must appear near the copyright symbol
+    const currentYear = String(new Date().getFullYear());
+    expect(html).toContain(currentYear);
+    // The copyright symbol must also appear
+    expect(html).toContain("©");
   });
 });

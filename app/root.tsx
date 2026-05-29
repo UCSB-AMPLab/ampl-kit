@@ -36,6 +36,7 @@ import { securityMiddleware, nonceContext } from "~/middleware/security";
 import { withBase, stripBasename } from "~/lib/paths";
 import { kitFontLinks } from "@ampl/kit/fonts";
 import { SiteHeader, SiteFooter, LocaleSwitcher } from "@ampl/kit/ui";
+import amplLogo from "@ampl/kit/assets/ampl-logo.svg";
 import "./app.css";
 
 export const middleware = [securityMiddleware, i18nextMiddleware];
@@ -54,6 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const locale = data?.locale ?? "en";
   const nonce = data?.nonce ?? "";
   const location = useLocation();
+  const { t } = useTranslation("common");
 
   // Build the locale-switch href: strip basename from current path so the
   // locale route can reconstruct it correctly, then prefix with withBase.
@@ -81,11 +83,49 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 current={locale as "en" | "es"}
               />
             }
+            nav={
+              <nav
+                aria-label={t("nav.ariaLabel")}
+                className="flex max-w-[480px] flex-wrap items-center justify-end gap-x-9 gap-y-1.5"
+              >
+                <a
+                  href="https://ampl.clair.ucsb.edu/#tools"
+                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
+                >
+                  {t("nav.tools")}
+                </a>
+                <a
+                  href="https://ampl.clair.ucsb.edu/#projects"
+                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
+                >
+                  {t("nav.projects")}
+                </a>
+                <a
+                  href="https://ampl.clair.ucsb.edu/#opportunities"
+                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
+                >
+                  {t("nav.opportunities")}
+                </a>
+                <a
+                  href="https://ampl.clair.ucsb.edu/people"
+                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
+                >
+                  {t("nav.people")}
+                </a>
+              </nav>
+            }
           >
-            {/* Text lockup — no favicon asset in this repo (kit fonts only) */}
-            <span className="font-title text-fg-1 text-h4 font-semibold tracking-tight">
-              AMPL Auth
-            </span>
+            {/* AMPL logo — links to lab home; img is decorative (aria-label on anchor) */}
+            <a
+              href="https://ampl.clair.ucsb.edu/"
+              aria-label="AMPL — Archives, Memory, and Preservation Lab"
+            >
+              <img
+                src={amplLogo}
+                alt=""
+                className="h-auto w-[300px] lg:w-[400px] xl:w-[500px]"
+              />
+            </a>
           </SiteHeader>
           <div className="flex-1">{children}</div>
           <SiteFooter />
