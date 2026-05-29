@@ -57,11 +57,15 @@ export async function handleWebhook(
     //    covers the exact original bytes)
     const rawBody = await request.text();
 
-    // 3. Verify Svix signature BEFORE any DB write
+    // 3. Verify Svix signature BEFORE any DB write. The secret is provisioned
+    //    via `wrangler secret put`; not auto-typed on Env.
+    const { RESEND_WEBHOOK_SECRET } = env as unknown as {
+      RESEND_WEBHOOK_SECRET: string;
+    };
     const valid = await verifySvixSignature(
       rawBody,
       request.headers,
-      env.RESEND_WEBHOOK_SECRET,
+      RESEND_WEBHOOK_SECRET,
     );
     if (!valid) {
       return new Response("Forbidden", { status: 403 });

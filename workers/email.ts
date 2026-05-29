@@ -248,9 +248,14 @@ export default class EmailWorker extends WorkerEntrypoint<Env> {
     recipient: string,
     msg: SendMessage,
   ): Promise<SendResult> {
+    // Secrets are provisioned via `wrangler secret put`; not auto-typed on Env.
+    const secrets = this.env as unknown as {
+      UNSUB_HMAC_SECRET: string;
+      RESEND_API_KEY: string;
+    };
     const unsubToken = await signUnsubToken(
       recipient,
-      this.env.UNSUB_HMAC_SECRET,
+      secrets.UNSUB_HMAC_SECRET,
     );
     const unsubUrl = `https://ampl.tools/email/unsubscribe?token=${encodeURIComponent(unsubToken)}`;
     const unsubHeaders = buildUnsubscribeHeaders(unsubToken);
@@ -282,7 +287,7 @@ export default class EmailWorker extends WorkerEntrypoint<Env> {
 
     let resendId: string;
     try {
-      ({ id: resendId } = await callResend(this.env.RESEND_API_KEY, payload));
+      ({ id: resendId } = await callResend(secrets.RESEND_API_KEY, payload));
     } catch (error) {
       // Mark the row failed so it does not count toward quota and a later retry
       // with the same idempotency key can re-attempt delivery.

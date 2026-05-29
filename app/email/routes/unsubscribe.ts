@@ -275,8 +275,12 @@ export async function handleUnsubscribe(
         return new Response("Bad Request: missing token", { status: 400 });
       }
 
-      // Verify the HMAC token — returns null if invalid
-      const address = await verifyUnsubToken(token, env.UNSUB_HMAC_SECRET);
+      // Verify the HMAC token — returns null if invalid. The secret is
+      // provisioned via `wrangler secret put`; not auto-typed on Env.
+      const { UNSUB_HMAC_SECRET } = env as unknown as {
+        UNSUB_HMAC_SECRET: string;
+      };
+      const address = await verifyUnsubToken(token, UNSUB_HMAC_SECRET);
       if (!address) {
         return new Response("Forbidden: invalid token", { status: 403 });
       }

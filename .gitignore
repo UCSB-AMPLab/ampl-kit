@@ -19,6 +19,7 @@ dist/
 .dev.vars.staging
 .dev.vars.production
 worker-configuration.d.ts
+workers-email-configuration.d.ts
 
 # Test coverage
 coverage/
