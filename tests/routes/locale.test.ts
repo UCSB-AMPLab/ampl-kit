@@ -64,7 +64,7 @@ async function callLocaleLoader(url: string): Promise<Response> {
 }
 
 describe("locale loader", () => {
-  it("L1: ?lng=es&to=/login → redirect with lng=es cookie and in-app Location", async () => {
+  it("?lng=es&to=/login → redirect with lng=es cookie and in-app Location", async () => {
     const resp = await callLocaleLoader(
       "https://ampl.tools/auth/locale?lng=es&to=%2Flogin"
     );
@@ -83,7 +83,7 @@ describe("locale loader", () => {
     expect(lng).toBe("es");
   });
 
-  it("L2: ?to=https://evil.example (absolute URL) → Location not evil.example; lng=es still set", async () => {
+  it("?to=https://evil.example (absolute URL) → Location not evil.example; lng=es still set", async () => {
     const resp = await callLocaleLoader(
       "https://ampl.tools/auth/locale?lng=es&to=https%3A%2F%2Fevil.example"
     );
@@ -103,7 +103,7 @@ describe("locale loader", () => {
     expect(lng).toBe("es");
   });
 
-  it("L3: ?to=//evil.example (protocol-relative) → Location not evil.example", async () => {
+  it("?to=//evil.example (protocol-relative) → Location not evil.example", async () => {
     const resp = await callLocaleLoader(
       "https://ampl.tools/auth/locale?lng=es&to=%2F%2Fevil.example"
     );

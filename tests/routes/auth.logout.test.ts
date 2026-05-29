@@ -41,7 +41,7 @@ function buildContext(): RouterContextProvider {
 }
 
 describe("auth.logout action", () => {
-  it("L1: valid session → session row deleted; redirect to absolute /auth/login; clear cookie Max-Age=0 Path=/", async () => {
+  it("valid session → session row deleted; redirect to absolute /auth/login; clear cookie Max-Age=0 Path=/", async () => {
     const db = getDb();
     const userId = await seedUser("logout-l1@example.com", "logout-l1");
     const created = await createSessionForUser(db, userId);
@@ -101,7 +101,7 @@ describe("auth.logout action", () => {
     expect(after).toBeUndefined();
   });
 
-  it("L2: no session cookie → still 3xx redirect without error", async () => {
+  it("no session cookie → still 3xx redirect without error", async () => {
     const request = new Request("https://example.test/auth/logout", {
       method: "POST",
       // No Cookie header
@@ -125,7 +125,7 @@ describe("auth.logout action", () => {
     expect(loc).toContain("/auth/login");
   });
 
-  it("L3: rate-limit miss → 429 response (not a redirect)", async () => {
+  it("rate-limit miss → 429 response (not a redirect)", async () => {
     const spy = vi
       .spyOn(env.AUTH_RATE_LIMITER, "limit")
       .mockResolvedValueOnce({ success: false });
@@ -146,7 +146,7 @@ describe("auth.logout action", () => {
     }
   });
 
-  it("L4: return_to=/palaeography → redirects to absolute apex /palaeography (no /auth prefix); cookie cleared", async () => {
+  it("return_to=/palaeography → redirects to absolute apex /palaeography (no /auth prefix); cookie cleared", async () => {
     const db = getDb();
     const userId = await seedUser("logout-l4@example.com", "logout-l4");
     const created = await createSessionForUser(db, userId);
@@ -187,7 +187,7 @@ describe("auth.logout action", () => {
     expect(sessionCookie?.attrs["path"]).toBe("/");
   });
 
-  it("L5: return_to=//evil.com → safeReturnTo rejects it; falls back to /auth/login (open-redirect blocked)", async () => {
+  it("return_to=//evil.com → safeReturnTo rejects it; falls back to /auth/login (open-redirect blocked)", async () => {
     const request = new Request(
       "https://example.test/auth/logout?return_to=%2F%2Fevil.com",
       {

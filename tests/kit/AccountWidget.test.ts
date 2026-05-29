@@ -25,7 +25,7 @@ import React from "react";
 const AVATAR_URL = "https://avatars.githubusercontent.com/u/1?v=4";
 
 describe("AccountWidget", () => {
-  it("AW1: renders the passed avatarUrl as an img src", async () => {
+  it("renders the passed avatarUrl as an img src", async () => {
     const { AccountWidget } = await import("kit/ui/AccountWidget");
     const { StaticRouter } = await import("react-router");
 
@@ -45,7 +45,7 @@ describe("AccountWidget", () => {
     expect(html).toContain(`src="${AVATAR_URL}"`);
   });
 
-  it("AW2: renders sign-out as a POST form whose action is the passed signOutHref", async () => {
+  it("renders sign-out as a POST form whose action is the passed signOutHref", async () => {
     const { AccountWidget } = await import("kit/ui/AccountWidget");
     const { StaticRouter } = await import("react-router");
 
@@ -66,7 +66,7 @@ describe("AccountWidget", () => {
     expect(html).toContain('action="/auth/logout"');
   });
 
-  it("AW4: drives sign-out with a submit button, never a GET <a> anchor", async () => {
+  it("drives sign-out with a submit button, never a GET <a> anchor", async () => {
     // Regression guard: a GET <a href> can't drive the POST-only /auth/logout
     // action (GET returns 405), so clicking it was a no-op. Sign-out must be a
     // submit button inside a POST form, with no anchor pointing at the href.
@@ -91,7 +91,7 @@ describe("AccountWidget", () => {
     expect(html).not.toContain('href="/auth/logout"');
   });
 
-  it("AW5: appends an optional returnTo to the form action as a guarded query param", async () => {
+  it("appends an optional returnTo to the form action as a guarded query param", async () => {
     const { AccountWidget } = await import("kit/ui/AccountWidget");
     const { StaticRouter } = await import("react-router");
 
@@ -114,7 +114,7 @@ describe("AccountWidget", () => {
     expect(html).toContain('action="/auth/logout?return_to=%2Fpalaeography"');
   });
 
-  it("AW3: renders no <img when avatarUrl is null (placeholder div instead)", async () => {
+  it("renders no <img when avatarUrl is null (placeholder div instead)", async () => {
     const { AccountWidget } = await import("kit/ui/AccountWidget");
     const { StaticRouter } = await import("react-router");
 
@@ -133,5 +133,58 @@ describe("AccountWidget", () => {
 
     // With avatarUrl=null, AccountWidget renders a <div> placeholder, not <img>
     expect(html).not.toContain("<img");
+  });
+
+  it("posts to /auth/logout by default when signOutHref is omitted", async () => {
+    // signOutHref is optional and defaults to the root-relative literal
+    // "/auth/logout". A consumer tool wired to the apex gets POST-to-apex-logout
+    // with no href argument — no import of a helper required.
+    const { AccountWidget } = await import("kit/ui/AccountWidget");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(AccountWidget, {
+          name: "Ada",
+          // signOutHref intentionally omitted — default should apply
+          avatarUrl: AVATAR_URL,
+        }),
+      ),
+    );
+
+    expect(html).toContain('method="post"');
+    expect(html).toContain('action="/auth/logout"');
+    // Assert root-relative, NOT absolute URL — a browser form action does not
+    // need an origin and an absolute URL would couple the widget to the apex.
+    expect(html).not.toContain('action="https://');
+  });
+
+  it("omits the @handle span when handle is not passed", async () => {
+    // handle is optional. When absent (or empty-string), the @handle
+    // <span> must not render at all — no bare "@" in the output. The name row
+    // still renders.
+    const { AccountWidget } = await import("kit/ui/AccountWidget");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/" },
+        React.createElement(AccountWidget, {
+          name: "Ada Lovelace",
+          // handle intentionally omitted
+          avatarUrl: AVATAR_URL,
+          signOutHref: "/auth/logout",
+        }),
+      ),
+    );
+
+    // Name row still present
+    expect(html).toContain("Ada Lovelace");
+    // Handle span absent entirely — no "@" character in the output at all
+    expect(html).not.toContain("@ada");
+    expect(html).not.toContain(">@<");
   });
 });

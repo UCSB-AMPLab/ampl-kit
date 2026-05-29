@@ -10,11 +10,12 @@
  * and trust that calling it cannot change session state. The work of refreshing
  * or "rolling" a session is a write that lives elsewhere, with the app that
  * holds a write-capable connection. Alongside the validator, the module exposes
- * two small URL helpers — one that sanitises a `return_to` value to block
- * open-redirect attacks, and one that builds an absolute login-redirect URL —
- * plus a re-export of the database contract types so a consumer gets everything
- * from a single import. The cookie-reading helpers stay private because
- * consumers only ever need to validate cookies, never construct them.
+ * three small URL helpers — one that sanitises a `return_to` value to block
+ * open-redirect attacks, one that builds an absolute login-redirect URL, and
+ * one that builds an absolute logout URL — plus a re-export of the database
+ * contract types so a consumer gets everything from a single import. The
+ * cookie-reading helpers stay private because consumers only ever need to
+ * validate cookies, never construct them.
  *
  * @version v0.1.0
  */
@@ -97,33 +98,29 @@ export async function validateSession(
   db: DrizzleD1Database<AuthDbSchema>,
   request: Request,
 ): Promise<AuthenticatedUser | null> {
-  try {
-    const isSecure = isSecureRequest(request);
-    const cookieName = getCookieName(isSecure);
-    const rawCookieValue = getCookieValue(request.headers.get("cookie"), cookieName);
-    if (!rawCookieValue || !isValidRawCookieValue(rawCookieValue)) {
-      return null;
-    }
-    const sessionId = hashCookieValue(rawCookieValue);
-    const row = await db
-      .select({ session: sessions, user: users })
-      .from(sessions)
-      .innerJoin(users, eq(sessions.userId, users.id))
-      .where(eq(sessions.id, sessionId))
-      .get();
-    if (!row) return null;
-    if (row.session.expiresAt <= Date.now()) return null;
-    return {
-      id: row.user.id,
-      githubId: row.user.githubId,
-      email: row.user.email,
-      handle: row.user.handle,
-      name: row.user.name,
-      avatarUrl: row.user.avatarUrl,
-    };
-  } catch (error) {
-    throw error;
+  const isSecure = isSecureRequest(request);
+  const cookieName = getCookieName(isSecure);
+  const rawCookieValue = getCookieValue(request.headers.get("cookie"), cookieName);
+  if (!rawCookieValue || !isValidRawCookieValue(rawCookieValue)) {
+    return null;
   }
+  const sessionId = hashCookieValue(rawCookieValue);
+  const row = await db
+    .select({ session: sessions, user: users })
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.id, sessionId))
+    .get();
+  if (!row) return null;
+  if (row.session.expiresAt <= Date.now()) return null;
+  return {
+    id: row.user.id,
+    githubId: row.user.githubId,
+    email: row.user.email,
+    handle: row.user.handle,
+    name: row.user.name,
+    avatarUrl: row.user.avatarUrl,
+  };
 }
 
 /**
@@ -173,6 +170,32 @@ export function buildLoginRedirect(
 ): string {
   return new URL(
     authBasename + "/login?return_to=" + encodeURIComponent(returnTo),
+    origin,
+  ).toString();
+}
+
+/**
+ * Builds an absolute logout URL that bypasses React Router v7's basename
+ * prepend. Consumer tools call this to redirect users to the apex logout
+ * endpoint, optionally with a `return_to` path so the user lands back on the
+ * right page after the session is cleared.
+ *
+ * Mirrors `buildLoginRedirect` exactly — same argument order, same default
+ * basename, same absolute URL output via `new URL(...)`.
+ *
+ * Example:
+ *   buildLogoutHref("/palaeography", "https://ampl.tools")
+ *   // → "https://ampl.tools/auth/logout?return_to=%2Fpalaeography"
+ *
+ * The `returnTo` value should already be validated by `safeReturnTo`.
+ */
+export function buildLogoutHref(
+  returnTo: string,
+  origin: string,
+  authBasename: string = "/auth",
+): string {
+  return new URL(
+    authBasename + "/logout?return_to=" + encodeURIComponent(returnTo),
     origin,
   ).toString();
 }

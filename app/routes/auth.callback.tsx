@@ -175,7 +175,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   // ── Verified primary email gate ──────────────────────────────────────────
-  const primaryEmail = ghEmails!.find(
+  // Guard: a malformed or empty /user/emails body (non-array or zero-length)
+  // must not reach .find — an unguarded TypeError on {} would 500 an already-
+  // token-holding request. Reuse the existing no-verified-email code so the
+  // set of error codes stays fixed; no sixth code is introduced. The
+  // Array.isArray check also narrows the type so the ! non-null assertion
+  // below is no longer needed.
+  if (!Array.isArray(ghEmails) || ghEmails.length === 0) {
+    rejectWithError("no-verified-email", isSecure);
+  }
+  const primaryEmail = ghEmails.find(
     (e) => e.primary && e.verified,
   );
   if (!primaryEmail) {

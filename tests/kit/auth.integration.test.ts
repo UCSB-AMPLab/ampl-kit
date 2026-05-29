@@ -16,7 +16,7 @@
  * @version v0.1.0
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { drizzle } from "drizzle-orm/d1";
 import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
@@ -26,6 +26,7 @@ import {
   validateSession,
   safeReturnTo,
   buildLoginRedirect,
+  buildLogoutHref,
   users,
   sessions,
   type AuthDbSchema,
@@ -111,6 +112,66 @@ describe("validateSession — four states", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// validateSession — zero writes
+// Asserts that validateSession never calls insert, update, or delete on any
+// code path — enforcing the read-only contract that lets consumers bind
+// AUTH_DB read-only with confidence.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("validateSession — zero writes", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("never calls insert, update, or delete on the happy path (live session)", async () => {
+    const db = drizzle(env.AUTH_DB, { schema });
+    const userId = await seedUser("nowrite@example.com", "nowrite");
+    const created = await createSessionForUser(db, userId);
+
+    // Spy on the Drizzle write methods after seeding
+    const insertSpy = vi.spyOn(authDb, "insert");
+    const updateSpy = vi.spyOn(authDb, "update");
+    const deleteSpy = vi.spyOn(authDb, "delete");
+
+    const req = new Request("https://ampl.tools/palaeography/", {
+      headers: { Cookie: `__Host-ampl_session=${created.rawCookieValue}` },
+    });
+    await validateSession(authDb, req);
+
+    expect(insertSpy).not.toHaveBeenCalled();
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
+  it("never calls insert, update, or delete when cookie is missing", async () => {
+    const insertSpy = vi.spyOn(authDb, "insert");
+    const updateSpy = vi.spyOn(authDb, "update");
+    const deleteSpy = vi.spyOn(authDb, "delete");
+
+    const req = new Request("https://ampl.tools/palaeography/");
+    await validateSession(authDb, req);
+
+    expect(insertSpy).not.toHaveBeenCalled();
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
+  it("never calls insert, update, or delete when cookie is malformed", async () => {
+    const insertSpy = vi.spyOn(authDb, "insert");
+    const updateSpy = vi.spyOn(authDb, "update");
+    const deleteSpy = vi.spyOn(authDb, "delete");
+
+    const req = new Request("https://ampl.tools/palaeography/", {
+      headers: { Cookie: "__Host-ampl_session=not-64-hex" },
+    });
+    await validateSession(authDb, req);
+
+    expect(insertSpy).not.toHaveBeenCalled();
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // safeReturnTo + buildLoginRedirect (open-redirect guard)
 // ─────────────────────────────────────────────────────────────────────────────
 describe("safeReturnTo + buildLoginRedirect", () => {
@@ -144,5 +205,27 @@ describe("safeReturnTo + buildLoginRedirect", () => {
   it("buildLoginRedirect accepts a custom authBasename", () => {
     const url = buildLoginRedirect("/calamus", "https://ampl.tools", "/auth");
     expect(url).toBe("https://ampl.tools/auth/login?return_to=%2Fcalamus");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// buildLogoutHref — mirrors buildLoginRedirect
+// ─────────────────────────────────────────────────────────────────────────────
+describe("buildLogoutHref", () => {
+  it("builds an absolute logout URL with no double /auth/ prefix", () => {
+    const url = buildLogoutHref("/palaeography", "https://ampl.tools");
+    expect(url).toBe("https://ampl.tools/auth/logout?return_to=%2Fpalaeography");
+    // Guard: must not produce /auth/auth double-prefix
+    expect(url).not.toContain("/auth/auth");
+  });
+
+  it("accepts a custom authBasename matching buildLoginRedirect behaviour", () => {
+    const url = buildLogoutHref("/calamus", "https://ampl.tools", "/auth");
+    expect(url).toBe("https://ampl.tools/auth/logout?return_to=%2Fcalamus");
+  });
+
+  it("percent-encodes the returnTo path", () => {
+    const url = buildLogoutHref("/path with spaces", "https://ampl.tools");
+    expect(url).toContain("return_to=%2Fpath%20with%20spaces");
   });
 });

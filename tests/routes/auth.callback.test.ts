@@ -203,7 +203,7 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("auth.callback - happy paths", () => {
-  it("C1: new user — INSERT row; session minted; OAuth cookies cleared", async () => {
+  it("new user — INSERT row; session minted; OAuth cookies cleared", async () => {
     const fetchSpy = installFetchSpy({ githubId: 99001, login: "newuser-c1", email: "c1@example.com" });
     try {
       setTokensOk();
@@ -245,7 +245,7 @@ describe("auth.callback - happy paths", () => {
     }
   });
 
-  it("C2: returning user — UPDATE profile; exactly ONE row for github_id (no duplicate)", async () => {
+  it("returning user — UPDATE profile; exactly ONE row for github_id (no duplicate)", async () => {
     // Seed an existing user with the same githubId
     const existingGithubId = 99002;
     await seedUser("c2-old@example.com", "oldhandle-c2", { githubId: existingGithubId });
@@ -287,7 +287,7 @@ describe("auth.callback - happy paths", () => {
 });
 
 describe("auth.callback - state validation", () => {
-  it("C3: state mismatch → /auth/login?error=state-mismatch; no token exchange", async () => {
+  it("state mismatch → /auth/login?error=state-mismatch; no token exchange", async () => {
     const resp = await callLoader({
       state: "URL-STATE",
       code: "auth-code",
@@ -299,7 +299,7 @@ describe("auth.callback - state validation", () => {
     expect(validateAuthorizationCodeMock).not.toHaveBeenCalled();
   });
 
-  it("C3b: no Cookie header → /auth/login?error=state-mismatch", async () => {
+  it("no Cookie header → /auth/login?error=state-mismatch", async () => {
     const resp = await callLoader({
       state: "any",
       code: "any",
@@ -310,7 +310,7 @@ describe("auth.callback - state validation", () => {
 });
 
 describe("auth.callback - email / claim rejections", () => {
-  it("C4: no primary verified email → /auth/login?error=no-verified-email", async () => {
+  it("no primary verified email → /auth/login?error=no-verified-email", async () => {
     const fetchSpy = installFetchSpy({ primaryVerified: false });
     try {
       setTokensOk();
@@ -322,20 +322,74 @@ describe("auth.callback - email / claim rejections", () => {
       fetchSpy.mockRestore();
     }
   });
+
+  it("/user/emails returns ok with non-array body → /login?error=no-verified-email (no 500)", async () => {
+    // Simulates GitHub returning a non-array JSON body (e.g. an error object) even
+    // though res.ok is true. Without the Array.isArray guard, ghEmails!.find(...)
+    // would throw a TypeError (500). With the guard it redirects gracefully.
+    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(
+      async (url: RequestInfo | URL) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/user/emails")) {
+          return new Response(JSON.stringify({}), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({ id: 99004, login: "user-c4b", name: "C4b", avatar_url: "https://example.test/avatar" }),
+          { status: 200 },
+        );
+      },
+    );
+    try {
+      setTokensOk();
+      const resp = await callLoader({ ...VALID_OPTS });
+      const loc = resp.headers.get("Location");
+      expect(loc).toContain("/login?error=no-verified-email");
+      expect(loc).not.toContain("/auth/login"); // basename double-prefix guard
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("/user/emails returns ok with empty array [] → /login?error=no-verified-email (no 500)", async () => {
+    // Simulates GitHub returning an empty emails array — no entry to .find().
+    // Reuses the existing no-verified-email redirect without introducing a new
+    // error code (five codes remain, no sixth added).
+    const fetchSpy = vi.spyOn(global, "fetch").mockImplementation(
+      async (url: RequestInfo | URL) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/user/emails")) {
+          return new Response(JSON.stringify([]), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({ id: 99005, login: "user-c4c", name: "C4c", avatar_url: "https://example.test/avatar" }),
+          { status: 200 },
+        );
+      },
+    );
+    try {
+      setTokensOk();
+      const resp = await callLoader({ ...VALID_OPTS });
+      const loc = resp.headers.get("Location");
+      expect(loc).toContain("/login?error=no-verified-email");
+      expect(loc).not.toContain("/auth/login"); // basename double-prefix guard
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
 });
 
 describe("auth.callback - GitHub-side errors", () => {
-  it("C5: ?error=access_denied → /auth/login?error=oauth-cancelled", async () => {
+  it("?error=access_denied → /auth/login?error=oauth-cancelled", async () => {
     const resp = await callLoader({ errorParam: "access_denied" });
     expect(resp.headers.get("Location")).toContain("/login?error=oauth-cancelled");
   });
 
-  it("C6: ?error=server_error → /auth/login?error=oauth-failed", async () => {
+  it("?error=server_error → /auth/login?error=oauth-failed", async () => {
     const resp = await callLoader({ errorParam: "server_error" });
     expect(resp.headers.get("Location")).toContain("/login?error=oauth-failed");
   });
 
-  it("C7: arctic throws on token exchange → /auth/login?error=oauth-failed", async () => {
+  it("arctic throws on token exchange → /auth/login?error=oauth-failed", async () => {
     setTokensThrows();
     const resp = await callLoader({ ...VALID_OPTS });
     expect(resp.headers.get("Location")).toContain("/login?error=oauth-failed");
@@ -343,7 +397,7 @@ describe("auth.callback - GitHub-side errors", () => {
 });
 
 describe("auth.callback - rate limit", () => {
-  it("C8: rate-limit miss → /auth/login?error=rate-limited; OAuth cookies cleared", async () => {
+  it("rate-limit miss → /auth/login?error=rate-limited; OAuth cookies cleared", async () => {
     const spy = vi
       .spyOn(env.AUTH_RATE_LIMITER, "limit")
       .mockResolvedValueOnce({ success: false });
@@ -364,7 +418,7 @@ describe("auth.callback - rate limit", () => {
 });
 
 describe("auth.callback - absolute redirect", () => {
-  it("C9: valid return_to → Location is absolute, contains path, no /auth prefix", async () => {
+  it("valid return_to → Location is absolute, contains path, no /auth prefix", async () => {
     const fetchSpy = installFetchSpy({ githubId: 99009, login: "user-c9", email: "c9@example.com" });
     try {
       setTokensOk();
@@ -386,7 +440,7 @@ describe("auth.callback - absolute redirect", () => {
     }
   });
 
-  it("C10: absent return_to → Location is absolute and ends /auth (not /auth/auth)", async () => {
+  it("absent return_to → Location is absolute and ends /auth (not /auth/auth)", async () => {
     const fetchSpy = installFetchSpy({ githubId: 99010, login: "user-c10", email: "c10@example.com" });
     try {
       setTokensOk();
@@ -408,7 +462,7 @@ describe("auth.callback - absolute redirect", () => {
     }
   });
 
-  it("C11: malformed return_to cookie -> redirect (no 500), session still minted", async () => {
+  it("malformed return_to cookie -> redirect (no 500), session still minted", async () => {
     const fetchSpy = installFetchSpy({ githubId: 99011, login: "user-c11", email: "c11@example.com" });
     try {
       setTokensOk();

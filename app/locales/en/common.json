@@ -31,5 +31,12 @@
     "state-mismatch": "The sign-in session expired. Please try again.",
     "no-verified-email": "Your GitHub account must have a verified primary email address.",
     "rate-limited": "Too many requests. Please wait a moment and try again."
+  },
+  "nav": {
+    "ariaLabel": "Lab site navigation",
+    "tools": "Tools",
+    "projects": "Projects",
+    "opportunities": "Opportunities",
+    "people": "People"
   }
 }

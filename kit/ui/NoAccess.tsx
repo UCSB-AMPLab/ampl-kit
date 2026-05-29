@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "./Button";
 
 /**
  * No-access page
@@ -16,7 +17,7 @@ import { useTranslation } from "react-i18next";
  *   toolName   — name of the tool (may be used in body copy interpolation)
  *   returnHref — optional "go back" link; omit to hide the CTA
  *
- * @version v0.1.0
+ * @version v0.1.1
  */
 
 type NoAccessProps = {
@@ -39,12 +40,9 @@ export function NoAccess({ toolName, returnHref }: NoAccessProps) {
         {t("noAccess.body", { toolName })}
       </p>
       {returnHref && (
-        <a
-          href={returnHref}
-          className="inline-flex items-center justify-center gap-2.5 rounded-pill bg-accent px-[26px] py-3.5 font-title text-[13px] font-medium uppercase tracking-[0.4px] text-bg no-underline transition-[filter] duration-[120ms] hover:brightness-[0.92] active:scale-[0.98]"
-        >
+        <Button as="a" variant="fill" href={returnHref}>
           {t("noAccess.back")}
-        </a>
+        </Button>
       )}
     </main>
   );
