@@ -198,7 +198,7 @@ Add the dependency to your `package.json`:
 ```json
 {
   "dependencies": {
-    "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.0"
+    "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
   }
 }
 ```
@@ -243,7 +243,7 @@ export const links: Route.LinksFunction = () => [
 2. Update the `#vX.Y.Z` ref in `package.json`:
 
    ```json
-   "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.0"
+   "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
    ```
 
 3. Run `npm install` to fetch the new ref and update `package-lock.json`.
@@ -257,11 +257,12 @@ bump deliberately.
 
 ## `@ampl/kit/email` — bilingual shell + `.ics` builder
 
-The `@ampl/kit/email` subpath ships two pure TypeScript functions and their
-types: `renderEmailShell` (the branded HTML + plain-text email shell) and
-`buildIcs` (a pure RFC 5545 `.ics` calendar attachment builder). These are
-the only surfaces from `@ampl/kit/email`; the underlying modules are not
-part of the public contract.
+The `@ampl/kit/email` subpath ships two pure TypeScript functions —
+`renderEmailShell` (the branded HTML + plain-text email shell) and `buildIcs`
+(a pure RFC 5545 `.ics` calendar attachment builder) — plus the type contracts
+for both the shell/`.ics` inputs and the `send()` RPC. These are the only
+surfaces from `@ampl/kit/email`; the underlying modules are not part of the
+public contract.
 
 ```typescript
 import {
@@ -270,12 +271,17 @@ import {
   type EmailShellInput,
   type EmailBlock,
   type IcsEvent,
+  type SendMessage,   // send() RPC contract — exported as of v0.2.1
+  type SendResult,    // send() RPC contract — exported as of v0.2.1
 } from "@ampl/kit/email";
 ```
 
 The `send()` call itself is made via the `EMAIL` service binding on each
-tool's Worker environment (`env.EMAIL.send(msg)`) — the service binding is
-not part of this subpath.
+tool's Worker environment (`env.EMAIL.send(msg): Promise<SendResult>`) — the
+service binding is configured in your `wrangler.jsonc`, not imported from this
+subpath, but its `SendMessage` / `SendResult` contract is. (On `v0.2.0` these
+two types were not exported; if you are still pinned there, vendor them from
+the email Worker's `app/email/types.ts`.)
 
 ---
 
@@ -285,8 +291,7 @@ Use this shape for a bilingual invitation email with a CTA button and an
 expiry note (no `.ics` attachment).
 
 ```typescript
-import { renderEmailShell, type EmailShellInput } from "@ampl/kit/email";
-import type { SendMessage } from "../app/email/types"; // the Worker RPC shape
+import { renderEmailShell, type EmailShellInput, type SendMessage } from "@ampl/kit/email";
 
 function buildInvitationMessage(locale: "en" | "es"): SendMessage {
   const input: EmailShellInput =
@@ -354,8 +359,7 @@ Use this shape for appointment confirmation, cancellation, poll-finalisation,
 and reminder emails that include a calendar attachment.
 
 ```typescript
-import { renderEmailShell, buildIcs, type EmailShellInput, type IcsEvent } from "@ampl/kit/email";
-import type { SendMessage } from "../app/email/types";
+import { renderEmailShell, buildIcs, type EmailShellInput, type IcsEvent, type SendMessage } from "@ampl/kit/email";
 
 function buildSchedulingMessage(
   subject: string,
@@ -499,12 +503,15 @@ const input: EmailShellInput = {
 The git tag is the contract for `@ampl/kit`. Consumers pin to an exact tag:
 
 ```json
-"@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.0"
+"@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
 ```
 
-**This release:** `v0.2.0` adds the `./email` subpath (`renderEmailShell`,
-`buildIcs`, `EmailShellInput`, `EmailBlock`, `IcsEvent`). Consumers on
-`v0.1.0` are unaffected — the `./auth` and `./ui` subpaths are unchanged.
+**This release:** `v0.2.1` exports the `send()` RPC contract (`SendMessage`,
+`SendResult`) from `./email` so consumers type their `EMAIL` service binding
+against the published contract instead of vendoring it — additive, no breaking
+change. (`v0.2.0` added the `./email` subpath itself: `renderEmailShell`,
+`buildIcs`, `EmailShellInput`, `EmailBlock`, `IcsEvent`.) Consumers on `v0.1.0`
+are unaffected — the `./auth` and `./ui` subpaths are unchanged.
 
 **Policy:**
 

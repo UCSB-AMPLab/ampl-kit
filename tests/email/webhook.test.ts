@@ -248,3 +248,41 @@ describe("handleWebhook — idempotency", () => {
     expect(res2.status).toBe(200);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Missing-secret fail-closed guard
+//
+// If RESEND_WEBHOOK_SECRET is unset the handler must reject the event with no
+// DB write, never silently accept an unverified webhook. Returns 5xx rather
+// than 200/403 because this is a server misconfiguration, not a bad signature.
+// ---------------------------------------------------------------------------
+
+describe("handleWebhook — missing RESEND_WEBHOOK_SECRET", () => {
+  it("rejects with no suppressions row when the secret is unset", async () => {
+    const address = `missing-wh-secret-${Date.now()}@example.com`;
+    const body = makeBouncePayload(address);
+    // Sign with the real fixture secret so only the missing-secret guard differs.
+    const req = await makeSignedRequest(
+      body,
+      env.RESEND_WEBHOOK_SECRET,
+      undefined,
+      `10.8.1.${Date.now() % 200}`,
+    );
+    const noSecretEnv = {
+      ...env,
+      RESEND_WEBHOOK_SECRET: undefined,
+    } as unknown as Env;
+
+    const res = await handleWebhook(req, noSecretEnv);
+
+    expect(res.status).toBe(500);
+
+    const db = getEmailDb();
+    const row = await db
+      .select()
+      .from(schema.suppressions)
+      .where(eq(schema.suppressions.address, address))
+      .get();
+    expect(row).toBeUndefined();
+  });
+});

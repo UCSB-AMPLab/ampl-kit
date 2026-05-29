@@ -128,6 +128,25 @@ export default class EmailWorker extends WorkerEntrypoint<Env> {
       const db = getEmailDb(this.env);
       const now = Date.now();
 
+      // (1a) Fail closed on a misconfigured environment. RESEND_API_KEY and
+      // UNSUB_HMAC_SECRET are provisioned via `wrangler secret put` and are not
+      // typed on Env. If either is missing we refuse to deliver — rather than
+      // sign the unsubscribe token with an empty HMAC key or call Resend with an
+      // empty Bearer — and surface a clean "configuration_error" before any DB
+      // write. The underlying crypto already throws on an empty key; this makes
+      // the fail-closed behaviour explicit and avoids a wasted Resend call.
+      // Mirrors the auth Worker's missing-secret guard.
+      const secrets = this.env as unknown as {
+        UNSUB_HMAC_SECRET?: string;
+        RESEND_API_KEY?: string;
+      };
+      if (!secrets.UNSUB_HMAC_SECRET || !secrets.RESEND_API_KEY) {
+        logError(new Error("email send secrets missing"), {
+          action: "email.send.secrets",
+        });
+        return { ok: false, reason: "error", detail: "configuration_error" };
+      }
+
       // The worker currently delivers to a single recipient per call. The
       // compliance footer and List-Unsubscribe token are bound to one address;
       // a multi-recipient send (msg.to as an array of length > 1) would embed

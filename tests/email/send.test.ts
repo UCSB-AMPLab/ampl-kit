@@ -448,3 +448,59 @@ describe("EmailWorker send() — regression tests", () => {
     expect(resendCalls).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Missing-secret fail-closed guards (parity with the auth Worker).
+//
+// send() must refuse to deliver if any required secret is unset/empty rather
+// than signing the unsubscribe token with a guessable key or calling Resend
+// with an "undefined" Bearer token. A misconfigured deployment fails closed
+// with detail "configuration_error" and makes ZERO Resend calls.
+// ---------------------------------------------------------------------------
+
+describe("EmailWorker send() — missing-secret guards", () => {
+  beforeEach(() => installResendFake());
+  afterEach(() => uninstallResendFake());
+
+  it("returns configuration_error and makes zero Resend calls when UNSUB_HMAC_SECRET is unset", async () => {
+    const noSecretEnv = {
+      ...env,
+      UNSUB_HMAC_SECRET: undefined,
+    } as unknown as Env;
+    const worker = new (
+      await import("../../workers/email")
+    ).default({} as unknown as ExecutionContext, noSecretEnv);
+
+    const result = await worker.send({
+      ...BASE_MSG,
+      to: `cfgerr-unsub-${Date.now()}@example.com`,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("send should fail closed on a missing secret");
+    expect(result.reason).toBe("error");
+    expect(result.detail).toBe("configuration_error");
+    expect(resendCalls).toHaveLength(0);
+  });
+
+  it("returns configuration_error and makes zero Resend calls when RESEND_API_KEY is unset", async () => {
+    const noSecretEnv = {
+      ...env,
+      RESEND_API_KEY: "",
+    } as unknown as Env;
+    const worker = new (
+      await import("../../workers/email")
+    ).default({} as unknown as ExecutionContext, noSecretEnv);
+
+    const result = await worker.send({
+      ...BASE_MSG,
+      to: `cfgerr-apikey-${Date.now()}@example.com`,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("send should fail closed on a missing secret");
+    expect(result.reason).toBe("error");
+    expect(result.detail).toBe("configuration_error");
+    expect(resendCalls).toHaveLength(0);
+  });
+});
