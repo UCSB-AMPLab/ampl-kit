@@ -14,6 +14,7 @@ import { defineWorkersConfig, readD1Migrations } from "@cloudflare/vitest-pool-w
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { configDefaults } from "vitest/config";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
@@ -22,6 +23,10 @@ export default defineWorkersConfig(async () => {
   return {
     plugins: [tsconfigPaths()],
     test: {
+      // The email Worker tests need EMAIL_DB + email migrations, supplied only
+      // by vitest.email.config.ts. Exclude them here so the default suite (and
+      // `npm test` in CI) does not run them against the auth AUTH_DB setup.
+      exclude: [...configDefaults.exclude, "tests/email/**"],
       setupFiles: ["./tests/apply-migrations.ts"],
       poolOptions: {
         workers: {

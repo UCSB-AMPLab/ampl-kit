@@ -8,7 +8,8 @@
     "kit/**/*",
     "workers/**/*",
     "tests/**/*",
-    "worker-configuration.d.ts"
+    "worker-configuration.d.ts",
+    "workers-email-configuration.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
