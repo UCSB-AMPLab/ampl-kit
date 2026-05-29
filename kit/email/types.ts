@@ -2,16 +2,20 @@
  * kit/email public contract types
  *
  * This file defines the client-surface types that form the `@ampl/kit/email`
- * contract: `EmailShellInput`, `EmailBlock`, and `IcsEvent`. Every tool that
- * renders an email shell or builds a calendar attachment imports from here.
- * `SendMessage` (the Worker-side RPC shape) stays in `app/email/types.ts`; this
- * file holds only the shapes that kit consumers need — the block DSL and the
- * iCalendar event model.
+ * contract: `SendMessage`, `SendResult`, `EmailShellInput`, `EmailBlock`, and
+ * `IcsEvent`. Every tool that renders an email shell, builds a calendar
+ * attachment, or calls the `EMAIL.send()` RPC imports from here.
+ *
+ * `SendMessage` / `SendResult` are the canonical `send()` RPC contract as of
+ * v0.2.1 — they live here (the shared library) rather than in the email
+ * Worker's `app/email/types.ts`, so consumers type their `EMAIL` service
+ * binding against the published, tag-versioned contract instead of vendoring a
+ * hand-copied interface. The Worker imports them back from here.
  *
  * Named exports only. No default export. No runtime values — type declarations
  * are compile-time only.
  *
- * @version v0.2.0
+ * @version v0.2.1
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -132,3 +136,81 @@ export interface IcsEvent {
   attendees: { name?: string; email: string }[];
   url?: string;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// send() RPC contract — SendMessage / SendResult
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The message shape passed to `env.EMAIL.send(msg)` via the Cloudflare service
+ * binding to the `ampl-email` Worker. The Resend API key never leaves that
+ * Worker — consumers only ever hold this contract.
+ *
+ * Required fields:
+ * - `to`, `subject`, `html`, `text` — core email content. Callers include the
+ *   `"[ToolName] "` subject prefix; the Worker prepends nothing. NOTE: the
+ *   Worker delivers to a single recipient per call — passing more than one
+ *   address is rejected (`reason:"error"`, `detail:"multi_recipient_unsupported"`).
+ * - `tool` — identifies the originating tool for the send log; extend the union
+ *   as new tools are added.
+ *
+ * Optional fields:
+ * - `idempotencyKey` — when present, the Worker deduplicates on this key via a
+ *   D1 UNIQUE constraint; absent means non-idempotent (each call is a new send).
+ * - `locale` — selects the compliance-footer language ("en" | "es"); defaults
+ *   to "en".
+ *
+ * Optional fields typed ahead of implementation:
+ * - `attachments` — for `.ics` attachments (Scheduling) and similar. Pass raw
+ *   `string` (e.g. `.ics` text) or `ArrayBuffer` (binary); the Worker re-encodes
+ *   `content` to base64 for the Resend REST API.
+ * - `replyTo` — per-tool reply-to address (not yet implemented by the Worker).
+ */
+export interface SendMessage {
+  to: string | string[];
+  subject: string; // caller includes "[ToolName] " prefix
+  html: string;
+  text: string;
+  tool: "calamus" | "scheduling";
+
+  /** When present, deduplicates on this key. Absent = non-idempotent. */
+  idempotencyKey?: string;
+
+  /** Footer/compliance language. Defaults to "en" when absent. */
+  locale?: "en" | "es";
+
+  /**
+   * Attachments. Pass raw `string` (e.g. `.ics` text) or `ArrayBuffer` (binary);
+   * the Worker re-encodes to base64 for the Resend REST API.
+   */
+  attachments?: Array<{
+    content: string | ArrayBuffer;
+    filename: string;
+    type: string;
+    disposition?: "attachment" | "inline";
+    contentId?: string;
+  }>;
+
+  /** Reply-To address (per-tool reply-to). Not yet implemented by the Worker. */
+  replyTo?: string;
+}
+
+/**
+ * The result returned by `env.EMAIL.send(msg)`.
+ *
+ * On success: `{ ok: true, id }` — the Resend message ID.
+ * On failure: `{ ok: false, reason, detail? }` — the Worker rejected the send
+ *   before (or instead of) calling Resend. Possible reasons:
+ *   - `"suppressed"` — the recipient is on the global suppression list.
+ *   - `"quota_exceeded"` — the monthly or daily quota ceiling was reached.
+ *   - `"duplicate"` — a send with this `idempotencyKey` was already delivered.
+ *   - `"error"` — unexpected/transient (Resend failure, multi-recipient,
+ *     `configuration_error`); `detail` carries a safe-to-log message.
+ */
+export type SendResult =
+  | { ok: true; id: string }
+  | {
+      ok: false;
+      reason: "suppressed" | "quota_exceeded" | "duplicate" | "error";
+      detail?: string;
+    };

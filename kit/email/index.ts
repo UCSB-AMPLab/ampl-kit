@@ -11,9 +11,15 @@
  * (one version number for the whole subpath); see CONSUMING.md for the
  * breaking-change policy and copy-paste integration recipes.
  *
- * @version v0.2.0
+ * @version v0.2.1
  */
 
 export { renderEmailShell } from "./shell";
 export { buildIcs } from "./ics";
-export type { EmailShellInput, EmailBlock, IcsEvent } from "./types";
+export type {
+  EmailShellInput,
+  EmailBlock,
+  IcsEvent,
+  SendMessage,
+  SendResult,
+} from "./types";
