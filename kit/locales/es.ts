@@ -14,6 +14,23 @@
  * @version v0.1.0
  */
 export default {
+  email: {
+    footer: {
+      transactional: "Este es un mensaje transaccional automático de AMPL.",
+      tagline: "Archives, Memory, and Preservation Lab · UC Santa Barbara",
+      unsubscribeLabel: "Darte de baja",
+    },
+    unsubscribe: {
+      pageTitle: "Darte de baja de los correos de AMPL",
+      heading: "Darte de baja",
+      explain:
+        "Al confirmar, esta dirección quedará excluida de todos los mensajes automáticos de AMPL. La exclusión es global: cubre todas las herramientas —Calamus, Scheduling y las que vengan más adelante—, no solo la que te envió este mensaje.",
+      button: "Confirmar baja",
+      confirmedHeading: "Te has dado de baja",
+      confirmedBody:
+        "Hemos quitado tu dirección de nuestra lista. Ya no recibirás mensajes automáticos de ninguna herramienta de AMPL.",
+    },
+  },
   footer: {
     terms: "Términos de uso",
     accessibility: "Accesibilidad",
