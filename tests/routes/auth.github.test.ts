@@ -122,6 +122,37 @@ describe("auth.github loader", () => {
     expect(returnToCookie!.attrs).toHaveProperty("path", "/auth");
   });
 
+  it("G1b: a forwarded return_to query lands (decoded) in the github_return_to cookie", async () => {
+    const returnTo = "/palaeography/invite/accept?token=abc";
+    // Unique IP so this call doesn't consume the shared "unknown"-IP rate-limit
+    // budget that the other tests rely on.
+    const { loader } = await import("~/routes/auth.github");
+    const request = new Request(
+      `https://ampl.tools/auth/github?return_to=${encodeURIComponent(returnTo)}`,
+      { headers: { "CF-Connecting-IP": "10.3.0.1" } },
+    );
+    let thrown: unknown;
+    try {
+      await loader({ request, context: buildContext(), params: {} } as any);
+    } catch (err) {
+      thrown = err;
+    }
+    if (!(thrown instanceof Response)) {
+      throw new Error(`loader did not throw a Response; got: ${String(thrown)}`);
+    }
+    const resp = thrown;
+
+    let returnToCookie: ReturnType<ReturnType<typeof parseSetCookie>["get"]>;
+    for (const raw of getAllSetCookies(resp)) {
+      const parsed = parseSetCookie(raw);
+      if (parsed.has("github_return_to")) returnToCookie = parsed.get("github_return_to");
+    }
+
+    expect(returnToCookie).toBeDefined();
+    // The cookie value is percent-encoded; decoding recovers the original path.
+    expect(decodeURIComponent(returnToCookie!.value)).toBe(returnTo);
+  });
+
   it("G2: HTTP origin (dev) emits cookies WITHOUT Secure", async () => {
     const resp = await callLoader("http://localhost:8787/auth/github");
 

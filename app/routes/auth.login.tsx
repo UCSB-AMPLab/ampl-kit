@@ -12,13 +12,16 @@
  * Applies the AMPL design language: kit Button + AuthError.
  *
  * Component behaviour:
- *   - Renders a kit Button ("Continue with GitHub") → withBase("/github").
+ *   - Renders a kit Button ("Continue with GitHub") → withBase("/github"),
+ *     forwarding any ?return_to= (percent-encoded) onto the start link so the
+ *     deep-link destination survives the OAuth round-trip. Without this the
+ *     param is dropped at the button and the user lands at /auth after login.
  *   - Reads ?error= from useSearchParams() and renders AuthError with the
  *     matching errors.* i18n key via the existing t(`errors.${errorCode}`,
  *     { defaultValue }) safe pattern.
  *   - Bilingual via the common namespace (login.* + errors.*).
  *
- * @version v0.1.0
+ * @version v0.2.2
  */
 
 import { useSearchParams } from "react-router";
@@ -36,6 +39,15 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const errorCode = searchParams.get("error");
 
+  // Forward the deep-link destination into the OAuth start link. Without this
+  // the param is dropped at the button, so auth.github sets an empty
+  // github_return_to cookie and the callback lands the user at /auth instead
+  // of where they were heading. Encoded so the path survives the round-trip.
+  const returnTo = searchParams.get("return_to");
+  const githubHref = withBase(
+    "/github" + (returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : ""),
+  );
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-[30px] py-20">
       <div className="w-full max-w-[400px]">
@@ -47,7 +59,7 @@ export default function LoginPage() {
           />
         )}
 
-        <Button as="a" variant="dark" href={withBase("/github")}>
+        <Button as="a" variant="dark" href={githubHref}>
           {/* Inline Octocat — official GitHub mark, white fill, no runtime dependency */}
           <svg
             aria-hidden="true"
