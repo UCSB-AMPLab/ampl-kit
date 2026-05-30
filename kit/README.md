@@ -13,7 +13,7 @@ git dependency.
 | `@ampl/kit/theme.css` | Tailwind v4 `@theme` tokens + base layer | ✅ |
 | `@ampl/kit/fonts` | `kitFontLinks` for the RR root `links` export | ✅ |
 | `@ampl/kit/locales/{en,es}` | i18n key fragments | ✅ (es pending review) |
-| `@ampl/kit/ui` | footer, header, account widget, no-access, auth-error, report-a-problem, primitives | ⏳ scaffold |
+| `@ampl/kit/ui` | footer, `AmplHeader` (unified two-band header), account widget, locale switcher, no-access, auth-error, report-a-problem, primitives | ✅ |
 | `@ampl/kit/auth` | session-validation helper + read-only `AUTH_DB` contract | ✅ |
 
 `@ampl/kit/ui` is presentational only — no secrets, no DB access. The single secret
@@ -104,3 +104,40 @@ export const links: Route.LinksFunction = () => [...kitFontLinks];
 ```
 
 Then merge `@ampl/kit/locales/{en,es}` and import surfaces from `@ampl/kit/ui`.
+
+## AmplHeader (`@ampl/kit/ui`)
+
+`AmplHeader` is the unified shared header for all AMPL tools. It renders a white
+institutional band (AMPL logo lockup + lab-site nav) and a deep-plum WORKSHOP
+band (tool switcher + contextual nav + EN/ES + account chip or sign-in link), plus
+a hamburger-toggled mobile sheet. All tool variation comes through props.
+
+```tsx
+import { AmplHeader, DEFAULT_TOOLS } from "@ampl/kit/ui";
+
+// Compact signed-in header (standard in-app use)
+<AmplHeader
+  tool="calamus"
+  toolName="Palaeography"
+  localeSwitcher={<LocaleSwitcher variant="on-dark" buildHref={buildHref} current={locale} />}
+  account={{ name: user.name, avatarUrl: user.avatar_url }}
+  nav={[
+    { label: "Manuscripts", href: "/palaeography/manuscripts", active: true },
+    { label: "Groups",      href: "/palaeography/groups" },
+  ]}
+/>
+
+// Full signed-out front door (size="full" only on the front door)
+<AmplHeader
+  tool="calamus"
+  toolName="Palaeography"
+  size="full"
+  localeSwitcher={<LocaleSwitcher variant="on-dark" buildHref={buildHref} current={locale} />}
+  signInHref="/auth/login?return_to=/palaeography"
+/>
+```
+
+The tool switcher defaults to `DEFAULT_TOOLS` (Palaeography + Scheduling); pass
+a custom `tools` array to override. `SiteHeader` is deprecated as of v0.3.0 in
+favour of `AmplHeader`. See `CONSUMING.md` for the full prop reference and CSP
+requirements.

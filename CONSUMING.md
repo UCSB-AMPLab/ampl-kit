@@ -266,6 +266,142 @@ bump deliberately.
 
 ---
 
+## `@ampl/kit/ui` — `AmplHeader`
+
+`AmplHeader` is the single shared header component for every tool on `ampl.tools`.
+It renders two bands: a white institutional band (the AMPL logo lockup and
+lab-site nav, owned by the kit) and a deep-plum (#743A6A) WORKSHOP band (tool
+switcher, contextual in-app nav, EN/ES, and the signed-in account chip or a
+sign-in link). A hamburger-toggled mobile sheet covers narrow screens. All tool
+variation comes through props — no per-tool fork of the component.
+
+```typescript
+import {
+  AmplHeader,
+  DEFAULT_TOOLS,
+  type AmplHeaderProps,
+  type NavItem,
+  type ToolLink,
+  type ToolId,
+  type AccountInfo,
+  type HeaderSize,
+} from "@ampl/kit/ui";
+```
+
+### Compact case (all in-app pages)
+
+```tsx
+// Signed-in compact header — standard in-app layout
+<AmplHeader
+  tool="calamus"
+  toolName="Palaeography"
+  localeSwitcher={
+    <LocaleSwitcher variant="on-dark" buildHref={buildLocaleSwitchHref} current={locale} />
+  }
+  account={{
+    name: user.name,
+    handle: user.handle,
+    avatarUrl: user.avatar_url,
+  }}
+  nav={[
+    { label: t("nav.manuscripts"), href: "/palaeography/manuscripts", active: true },
+    { label: t("nav.groups"),      href: "/palaeography/groups" },
+  ]}
+/>
+```
+
+The `size` prop defaults to `"compact"` and can be omitted on every in-app
+page.
+
+### Full case (signed-out front door only)
+
+```tsx
+// Signed-out front door — size="full" masthead, no nav
+<AmplHeader
+  tool="calamus"
+  toolName="Palaeography"
+  size="full"
+  localeSwitcher={
+    <LocaleSwitcher variant="on-dark" buildHref={buildLocaleSwitchHref} current={locale} />
+  }
+  signInHref="/auth/login?return_to=/palaeography"
+/>
+```
+
+Use `size="full"` **only** on the signed-out front-door page. Every authenticated
+page and every intermediate state uses the default `"compact"`. Only the
+institutional band scales between the two sizes; the WORKSHOP band is constant
+height in both modes.
+
+### `account` vs `signInHref` — signed-in vs signed-out
+
+When `account` is provided the WORKSHOP band renders the signed-in account chip
+(avatar or initials + name, with a menu). When `account` is `null` or omitted
+the band renders a sign-in link pointing to `signInHref`.
+
+```tsx
+// Signed-in
+<AmplHeader account={{ name: user.name, avatarUrl: user.avatar_url }} ... />
+
+// Signed-out
+<AmplHeader account={null} signInHref="/auth/login?return_to=/palaeography" ... />
+```
+
+Override the sign-in link text with `signInLabel` when the default ("Sign in")
+does not fit the tool's voice — for example, Scheduling passes
+`signInLabel="Host sign in"`.
+
+### `AccountInfo` sign-out
+
+`AccountInfo.signOutHref` defaults to `"/auth/logout"`. Sign-out is a POST form.
+Pass `signOutHref` only if you need to override the target (e.g. in a local dev
+environment); standard deployments need no override.
+
+### Tool switcher
+
+The WORKSHOP band includes a cross-tool switcher populated from the `tools` prop.
+It defaults to `DEFAULT_TOOLS` (Palaeography and Scheduling). Override it to
+control which tools appear or to add future tools:
+
+```typescript
+import { DEFAULT_TOOLS } from "@ampl/kit/ui";
+
+// Use the default registry — no prop needed
+<AmplHeader tools={DEFAULT_TOOLS} ... />
+
+// Override with a custom registry
+<AmplHeader
+  tools={[
+    { id: "calamus",    name: "Palaeography", descriptor: "Practice reading manuscripts", href: "https://ampl.tools/palaeography" },
+    { id: "scheduling", name: "Scheduling",   descriptor: "booking & polls",              href: "https://ampl.tools/scheduling" },
+  ]}
+  ... />
+```
+
+The `tool` prop (internal tool id) drives the switcher "current" highlight so
+the active tool is visually distinguished.
+
+### LocaleSwitcher variant
+
+Pass `<LocaleSwitcher variant="on-dark" .../>` to `AmplHeader`. The `"on-dark"`
+variant is styled for the plum WORKSHOP band; the default light variant is
+unsuitable on that background.
+
+### CSP: avatar host
+
+When `account` carries a non-null `avatarUrl`, the header renders the GitHub
+avatar as a plain `<img>`. The same CSP requirement applies as for
+`AccountWidget` — add `avatars.githubusercontent.com` to `img-src`. See
+[section 2, "CSP avatar host"](#2-csp-avatar-host) above.
+
+### Deprecation note
+
+`SiteHeader` is `@deprecated` as of v0.3.0. It is retained for backward
+compatibility but new tools should use `AmplHeader`. Existing consumers (Calamus)
+should migrate at the next milestone boundary.
+
+---
+
 ## `@ampl/kit/email` — bilingual shell + `.ics` builder
 
 The `@ampl/kit/email` subpath ships two pure TypeScript functions —
@@ -517,16 +653,20 @@ The git tag is the contract for `@ampl/kit`. Consumers pin to an exact tag:
 "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
 ```
 
-**This release:** `v0.2.2` fixes a `return_to` bug in the hosted `ampl-auth`
-service: the login page dropped `return_to` at the "Continue with GitHub"
-button, so deep-link-after-login always landed at `/auth` (see the note in
-section 4). It is a service-side fix with no library API change — every
-consuming tool benefits once the shared service is deployed at v0.2.2, and no
-consumer code change is required. (`v0.2.1` exported the `send()` RPC contract —
-`SendMessage`, `SendResult` — from `./email`; `v0.2.0` added the `./email`
-subpath itself: `renderEmailShell`, `buildIcs`, `EmailShellInput`, `EmailBlock`,
-`IcsEvent`.) Consumers on `v0.1.0` are unaffected at the library level — the
-`./auth` and `./ui` subpaths are unchanged.
+**This release:** `v0.3.0` adds `AmplHeader` — a new UI component exported from
+`@ampl/kit/ui`, along with the `DEFAULT_TOOLS` registry and the types
+`AmplHeaderProps`, `NavItem`, `ToolLink`, `ToolId`, `AccountInfo`, and
+`HeaderSize`. It also adds the `kit.nav`, `kit.switcher`, and `kit.header` i18n
+string groups and the `"on-dark"` `LocaleSwitcher` variant. This is purely
+additive — a **minor** bump. `SiteHeader` is deprecated but retained for
+back-compat; no consumer is required to migrate. (`v0.2.2` fixed a `return_to`
+bug in the hosted `ampl-auth` service: the login page dropped `return_to` at
+the "Continue with GitHub" button, so deep-link-after-login always landed at
+`/auth` — a service-side fix with no library API change. `v0.2.1` exported the
+`send()` RPC contract — `SendMessage`, `SendResult` — from `./email`; `v0.2.0`
+added the `./email` subpath itself: `renderEmailShell`, `buildIcs`,
+`EmailShellInput`, `EmailBlock`, `IcsEvent`.) Consumers on `v0.1.0` are
+unaffected at the library level — the `./auth` subpath is unchanged.
 
 **Policy:**
 

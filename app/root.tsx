@@ -3,8 +3,9 @@
  *
  * This file is the outermost wrapper around every page the app renders. It
  * owns the HTML document itself — the `<html>`, `<head>`, and `<body>` — and
- * paints the persistent chrome that surrounds each route: the AMPL site header
- * with its "AMPL Auth" lockup, a language switcher, and the shared footer. Two
+ * paints the persistent chrome that surrounds each route: the shared
+ * `AmplHeader` (full masthead, `tool="auth"`, the signed-out front door) with
+ * its language switcher, and the shared footer. Two
  * middlewares run here for every request — `securityMiddleware`, which mints
  * the per-request CSP nonce, and `i18nextMiddleware`, which resolves the
  * active language — and the root loader hands both the chosen `locale` and the
@@ -15,7 +16,7 @@
  * — the friendly, translated fallback shown when a route throws or a page is
  * not found, with a developer stack trace surfaced only in development.
  *
- * @version v0.1.0
+ * @version v0.3.0
  */
 
 import {
@@ -35,8 +36,7 @@ import { i18nextMiddleware, getLocale } from "~/middleware/i18next";
 import { securityMiddleware, nonceContext } from "~/middleware/security";
 import { withBase, stripBasename } from "~/lib/paths";
 import { kitFontLinks } from "@ampl/kit/fonts";
-import { SiteHeader, SiteFooter, LocaleSwitcher } from "@ampl/kit/ui";
-import amplLogo from "@ampl/kit/assets/ampl-logo.svg";
+import { AmplHeader, SiteFooter, LocaleSwitcher } from "@ampl/kit/ui";
 import "./app.css";
 
 export const middleware = [securityMiddleware, i18nextMiddleware];
@@ -55,7 +55,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const locale = data?.locale ?? "en";
   const nonce = data?.nonce ?? "";
   const location = useLocation();
-  const { t } = useTranslation("common");
 
   // Build the locale-switch href: strip basename from current path so the
   // locale route can reconstruct it correctly, then prefix with withBase.
@@ -76,57 +75,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div className="flex min-h-screen flex-col">
-          <SiteHeader
+          <AmplHeader
+            tool="auth"
+            toolName="Account"
+            size="full"
             localeSwitcher={
               <LocaleSwitcher
                 buildHref={buildLocaleHref}
                 current={locale as "en" | "es"}
+                variant="on-dark"
               />
             }
-            nav={
-              <nav
-                aria-label={t("nav.ariaLabel")}
-                className="flex max-w-[480px] flex-wrap items-center justify-end gap-x-9 gap-y-1.5"
-              >
-                <a
-                  href="https://ampl.clair.ucsb.edu/#tools"
-                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
-                >
-                  {t("nav.tools")}
-                </a>
-                <a
-                  href="https://ampl.clair.ucsb.edu/#projects"
-                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
-                >
-                  {t("nav.projects")}
-                </a>
-                <a
-                  href="https://ampl.clair.ucsb.edu/#opportunities"
-                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
-                >
-                  {t("nav.opportunities")}
-                </a>
-                <a
-                  href="https://ampl.clair.ucsb.edu/people"
-                  className="font-title text-[20px] lg:text-[24px] xl:text-[28px] font-medium leading-none uppercase tracking-[0.4px] text-fg-1 hover:text-accent no-underline"
-                >
-                  {t("nav.people")}
-                </a>
-              </nav>
-            }
-          >
-            {/* AMPL logo — links to lab home; img is decorative (aria-label on anchor) */}
-            <a
-              href="https://ampl.clair.ucsb.edu/"
-              aria-label="AMPL — Archives, Memory, and Preservation Lab"
-            >
-              <img
-                src={amplLogo}
-                alt=""
-                className="h-auto w-[300px] lg:w-[400px] xl:w-[500px]"
-              />
-            </a>
-          </SiteHeader>
+          />
           <div className="flex-1">{children}</div>
           <SiteFooter />
         </div>

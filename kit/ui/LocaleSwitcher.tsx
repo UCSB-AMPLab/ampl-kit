@@ -15,8 +15,9 @@ import { useTranslation } from "react-i18next";
  *   const buildHref = (lng: "en" | "es") =>
  *     `${withBase("/locale")}?lng=${lng}&to=...`;
  *   <LocaleSwitcher buildHref={buildHref} current={current} />
+ *   <LocaleSwitcher buildHref={buildHref} current={current} variant="on-dark" />  // plum band
  *
- * @version v0.1.0
+ * @version v0.1.1
  */
 
 type LocaleSwitcherProps = {
@@ -24,41 +25,27 @@ type LocaleSwitcherProps = {
   buildHref: (lng: "en" | "es") => string;
   /** The currently active locale. */
   current: "en" | "es";
+  /** Visual theme. "on-dark" is for the plum WORKSHOP band; default is light. */
+  variant?: "default" | "on-dark";
 };
 
-export function LocaleSwitcher({ buildHref, current }: LocaleSwitcherProps) {
+export function LocaleSwitcher({ buildHref, current, variant = "default" }: LocaleSwitcherProps) {
   const { t } = useTranslation("kit");
+  const onDark = variant === "on-dark";
+  const activeCls = onDark ? "font-semibold text-white" : "font-semibold text-fg-1";
+  const idleCls = onDark ? "text-white/60 hover:text-white" : "text-fg-3 hover:text-accent";
+  const slashCls = onDark ? "text-white/30" : "text-fg-3 opacity-60";
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 font-title text-[13px] uppercase tracking-[0.6px]"
+      className="inline-flex items-center gap-1.5 font-body text-[13px] uppercase tracking-[0.5px]"
       aria-label={t("header.localeLabel")}
     >
-      <a
-        href={buildHref("en")}
-        aria-current={current === "en" ? "true" : undefined}
-        className={
-          current === "en"
-            ? "font-semibold text-fg-1"
-            : "text-fg-3 hover:text-accent"
-        }
-      >
-        EN
-      </a>
-      <span className="text-fg-3 opacity-60" aria-hidden="true">
-        /
-      </span>
-      <a
-        href={buildHref("es")}
-        aria-current={current === "es" ? "true" : undefined}
-        className={
-          current === "es"
-            ? "font-semibold text-fg-1"
-            : "text-fg-3 hover:text-accent"
-        }
-      >
-        ES
-      </a>
+      <a href={buildHref("en")} aria-current={current === "en" ? "true" : undefined}
+        className={current === "en" ? activeCls : idleCls}>EN</a>
+      <span className={slashCls} aria-hidden="true">/</span>
+      <a href={buildHref("es")} aria-current={current === "es" ? "true" : undefined}
+        className={current === "es" ? activeCls : idleCls}>ES</a>
     </div>
   );
 }

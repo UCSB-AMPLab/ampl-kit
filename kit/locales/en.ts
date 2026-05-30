@@ -37,6 +37,22 @@ export default {
   },
   header: {
     localeLabel: "Switch language",
+    signIn: "Sign in",
+    menuLabel: "Menu",
+  },
+  nav: {
+    ariaLabel: "Lab site navigation",
+    tools: "Tools",
+    projects: "Projects",
+    opportunities: "Opportunities",
+    people: "People",
+  },
+  switcher: {
+    heading: "AMPL Workshop",
+    tagline: {
+      calamus: "Practice reading manuscripts",
+      scheduling: "booking & polls",
+    },
   },
   accountWidget: {
     signOut: "Sign out",
