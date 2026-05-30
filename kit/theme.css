@@ -33,7 +33,8 @@
 
   --color-accent:      #A5469A;   /* THE AMPL plum — the single UI accent */
   --color-accent-ink:  #8B467D;   /* footer band plum */
-  --color-accent-deep: #743A6A;   /* footer-bottom plum */
+  --color-accent-deep: #743A6A;   /* footer-bottom plum + WORKSHOP band */
+  --color-accent-pale: #efd6e9;   /* WORKSHOP eyebrow + current-tool in switcher (on plum) */
 
   --color-hue-orange:  #D97743;   /* per-project accent override ONLY */
   --color-hue-blue:    #3B6BA5;   /* per-project accent override ONLY */

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { buildSignOutAction } from "./lib/sign-out";
 
 /**
  * Account widget
@@ -33,7 +34,7 @@ import { useTranslation } from "react-i18next";
  *                 preserves its action URL's query string, so this reaches the
  *                 route; a hidden input would land in the body and be ignored.
  *
- * @version v0.1.2
+ * @version v0.1.3
  */
 
 type AccountWidgetProps = {
@@ -43,19 +44,6 @@ type AccountWidgetProps = {
   signOutHref?: string;
   returnTo?: string;
 };
-
-// Append a guarded return_to to the logout endpoint without clobbering any
-// query string signOutHref may already carry. Built with URLSearchParams rather
-// than string concatenation so existing params survive and the value is encoded
-// (split on "?" keeps this working for relative hrefs, which `new URL()` can't
-// parse without a base).
-function buildSignOutAction(signOutHref: string, returnTo?: string): string {
-  if (!returnTo) return signOutHref;
-  const [path, existingQuery = ""] = signOutHref.split("?");
-  const params = new URLSearchParams(existingQuery);
-  params.set("return_to", returnTo);
-  return `${path}?${params.toString()}`;
-}
 
 export function AccountWidget({
   name,
