@@ -11,11 +11,14 @@
  * app-specific logic. The session-validation code deliberately lives in its own
  * separate module and is not exposed through this barrel.
  *
- * @version v0.1.0
+ * @version v0.3.0
  */
 
 export { SiteFooter } from "./SiteFooter";
+/** @deprecated Superseded by AmplHeader (v0.3.0). Kept for back-compat. */
 export { SiteHeader } from "./SiteHeader";
+export { AmplHeader, DEFAULT_TOOLS } from "./ampl-header";
+export type { AmplHeaderProps, NavItem, ToolLink, ToolId, AccountInfo, HeaderSize } from "./ampl-header";
 export { LocaleSwitcher } from "./LocaleSwitcher";
 export { Button } from "./Button";
 export { AccountWidget } from "./AccountWidget";
