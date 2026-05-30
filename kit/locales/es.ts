@@ -37,6 +37,22 @@ export default {
   },
   header: {
     localeLabel: "Cambiar idioma",
+    signIn: "Iniciar sesión",
+    menuLabel: "Menú",
+  },
+  nav: {
+    ariaLabel: "Navegación del sitio del laboratorio",
+    tools: "Herramientas",
+    projects: "Proyectos",
+    opportunities: "Oportunidades",
+    people: "Personas",
+  },
+  switcher: {
+    heading: "Taller AMPL",
+    tagline: {
+      calamus: "Practica leer manuscritos",
+      scheduling: "reservas y encuestas",
+    },
   },
   accountWidget: {
     signOut: "Cerrar sesión",
