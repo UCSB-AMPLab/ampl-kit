@@ -81,6 +81,43 @@ describe("auth.login page", () => {
     expect(html).toContain('href="/auth/github"');
   });
 
+  it("forwards return_to to the GitHub button href (encoded)", async () => {
+    const { default: LoginPage } = await import("~/routes/auth.login");
+    const { StaticRouter } = await import("react-router");
+
+    const returnTo = "/palaeography/invite/accept?token=abc";
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: `/auth/login?return_to=${encodeURIComponent(returnTo)}` },
+        React.createElement(LoginPage as React.ComponentType),
+      ),
+    );
+
+    // The GitHub start link must carry the return_to, percent-encoded, so the
+    // deep-link destination survives the OAuth round-trip.
+    expect(html).toContain(
+      `href="/auth/github?return_to=${encodeURIComponent(returnTo)}"`,
+    );
+  });
+
+  it("parity: no return_to → GitHub button href stays plain /auth/github", async () => {
+    const { default: LoginPage } = await import("~/routes/auth.login");
+    const { StaticRouter } = await import("react-router");
+
+    const html = renderToString(
+      React.createElement(
+        StaticRouter,
+        { location: "/auth/login" },
+        React.createElement(LoginPage as React.ComponentType),
+      ),
+    );
+
+    // Without a return_to, the href carries no query string.
+    expect(html).toContain('href="/auth/github"');
+    expect(html).not.toContain("return_to");
+  });
+
   it("sign-in button uses the dark variant", async () => {
     const { default: LoginPage } = await import("~/routes/auth.login");
     const { StaticRouter } = await import("react-router");

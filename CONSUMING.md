@@ -184,6 +184,17 @@ redirects there directly after login — the absolute-URL redirect avoids
 the double-prefix issue (`/auth/auth/...`) that arises when a relative
 `redirect()` path collides with React Router's basename prepend.
 
+> **Fixed in v0.2.2 — `return_to` dropped at the login button.** A
+> hosted `ampl-auth` service deployed at **v0.2.1 or earlier** dropped
+> `return_to` on the login page: the "Continue with GitHub" button did
+> not forward the param into the OAuth start link, so the callback always
+> landed the user at `/auth` instead of the deep-link destination. This is
+> a **service-side fix** — it takes effect when the shared `ampl.tools/auth`
+> service is deployed at v0.2.2, and benefits every consumer at once.
+> Consumers do not need to change any code; bumping the pinned
+> `@ampl/kit` ref to `#v0.2.2` simply keeps the vendored types in step.
+> (Calamus, pinned at `#v0.2.1`, is one affected consumer.)
+
 ---
 
 ## Git dependency — pinning and updating
@@ -506,12 +517,16 @@ The git tag is the contract for `@ampl/kit`. Consumers pin to an exact tag:
 "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
 ```
 
-**This release:** `v0.2.1` exports the `send()` RPC contract (`SendMessage`,
-`SendResult`) from `./email` so consumers type their `EMAIL` service binding
-against the published contract instead of vendoring it — additive, no breaking
-change. (`v0.2.0` added the `./email` subpath itself: `renderEmailShell`,
-`buildIcs`, `EmailShellInput`, `EmailBlock`, `IcsEvent`.) Consumers on `v0.1.0`
-are unaffected — the `./auth` and `./ui` subpaths are unchanged.
+**This release:** `v0.2.2` fixes a `return_to` bug in the hosted `ampl-auth`
+service: the login page dropped `return_to` at the "Continue with GitHub"
+button, so deep-link-after-login always landed at `/auth` (see the note in
+section 4). It is a service-side fix with no library API change — every
+consuming tool benefits once the shared service is deployed at v0.2.2, and no
+consumer code change is required. (`v0.2.1` exported the `send()` RPC contract —
+`SendMessage`, `SendResult` — from `./email`; `v0.2.0` added the `./email`
+subpath itself: `renderEmailShell`, `buildIcs`, `EmailShellInput`, `EmailBlock`,
+`IcsEvent`.) Consumers on `v0.1.0` are unaffected at the library level — the
+`./auth` and `./ui` subpaths are unchanged.
 
 **Policy:**
 
