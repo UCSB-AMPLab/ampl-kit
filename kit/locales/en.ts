@@ -48,7 +48,8 @@ export default {
     people: "People",
   },
   switcher: {
-    heading: "AMPL Workshop",
+    current: "Current",
+    switchTo: "Switch to",
     tagline: {
       calamus: "Practice reading manuscripts",
       scheduling: "booking & polls",

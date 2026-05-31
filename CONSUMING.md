@@ -653,7 +653,15 @@ The git tag is the contract for `@ampl/kit`. Consumers pin to an exact tag:
 "@ampl/kit": "github:UCSB-AMPLab/ampl-kit#v0.2.1"
 ```
 
-**This release:** `v0.3.0` adds `AmplHeader` — a new UI component exported from
+**This release:** `v0.3.1` refines the `AmplHeader` WORKSHOP switcher dropdown —
+it now surfaces the current tool in a banner above a "switch to" list, on a
+deeper-plum panel that separates from the band without a shadow. No API change
+(the `AmplHeader` props are unchanged); internally it adds the `accent-deepest`
+token and swaps the kit `switcher.heading` string for `switcher.current` /
+`switcher.switchTo`. A patch bump — consumers pinning `v0.3.0` upgrade by
+bumping the ref; nothing else changes.
+
+`v0.3.0` adds `AmplHeader` — a new UI component exported from
 `@ampl/kit/ui`, along with the `DEFAULT_TOOLS` registry and the types
 `AmplHeaderProps`, `NavItem`, `ToolLink`, `ToolId`, `AccountInfo`, and
 `HeaderSize`. It also adds the `kit.nav`, `kit.switcher`, and `kit.header` i18n
