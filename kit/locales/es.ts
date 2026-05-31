@@ -48,7 +48,8 @@ export default {
     people: "Personas",
   },
   switcher: {
-    heading: "Taller AMPL",
+    current: "Actual",
+    switchTo: "Cambiar a",
     tagline: {
       calamus: "Practica leer manuscritos",
       scheduling: "reservas y encuestas",
