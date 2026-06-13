@@ -1,15 +1,19 @@
 /**
  * Mobile sheet — the full-width hamburger-toggled panel for narrow screens:
- * lab nav + tool nav + EN/ES + account/sign-in. Always in the DOM; visibility
- * via the `hidden`/`aria-hidden` toggle so it is SSR-present and tab-order-correct.
+ * workshop switcher + lab nav + tool nav + EN/ES + account/sign-in. Always in
+ * the DOM; visibility via the `hidden`/`aria-hidden` toggle so it is SSR-present
+ * and tab-order-correct.
  *
- * @version v0.3.0
+ * v0.3.2: gains a "switch tool" section (current + other tools), since the
+ * desktop switcher now lives in the institutional band which collapses here.
+ *
+ * @version v0.3.2
  */
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { buildSignOutAction } from "../lib/sign-out";
 import { LAB_NAV } from "./lab-nav";
-import type { AccountInfo, NavItem } from "./types";
+import type { AccountInfo, NavItem, ToolId, ToolLink } from "./types";
 
 export function MobileSheet({
   open,
@@ -19,6 +23,9 @@ export function MobileSheet({
   account,
   signInHref,
   signInLabel,
+  tool,
+  toolName,
+  tools,
 }: {
   open: boolean;
   nav?: NavItem[];
@@ -27,11 +34,16 @@ export function MobileSheet({
   account?: AccountInfo | null;
   signInHref?: string;
   signInLabel?: ReactNode;
+  tool: ToolId;
+  toolName: string;
+  tools: ToolLink[];
 }) {
   const { t } = useTranslation("kit");
   const signOutAction = account
     ? buildSignOutAction(account.signOutHref ?? "/auth/logout", account.returnTo)
     : "";
+  const currentTool = tools.find((tl) => tl.id === tool);
+  const otherTools = tools.filter((tl) => tl.id !== tool);
 
   return (
     <div
@@ -40,8 +52,30 @@ export function MobileSheet({
       aria-hidden={!open}
       className="border-t border-white/20 bg-accent-deep px-[30px] py-5 md:hidden"
     >
+      {/* Workshop switcher — current tool + switch-to links */}
+      <div className="flex flex-col gap-1.5 pb-5">
+        <span className="font-display text-[8px] uppercase tracking-[1px] text-accent-pale">
+          {t("switcher.current")}
+        </span>
+        <span className="font-title text-[18px] font-medium text-white">
+          {currentTool?.name ?? toolName}
+        </span>
+        {otherTools.length > 0 && (
+          <>
+            <span className="mt-2 font-display text-[8px] uppercase tracking-[1px] text-white/60">
+              {t("switcher.switchTo")}
+            </span>
+            {otherTools.map((tl) => (
+              <a key={tl.id} href={tl.href} className="font-title text-[16px] font-medium text-white no-underline">
+                {tl.name}
+              </a>
+            ))}
+          </>
+        )}
+      </div>
+
       {/* Lab nav */}
-      <nav aria-label={t("nav.ariaLabel")} className="flex flex-col gap-3">
+      <nav aria-label={t("nav.ariaLabel")} className="flex flex-col gap-3 border-t border-white/20 pt-5">
         {LAB_NAV.map((item) => (
           <a key={item.key} href={item.href} className="font-title text-[18px] uppercase tracking-[0.5px] text-white no-underline">
             {t(`nav.${item.key}`)}

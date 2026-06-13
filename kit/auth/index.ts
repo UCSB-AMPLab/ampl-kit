@@ -135,7 +135,7 @@ export async function validateSession(
  *   - backslash (handles `\\evil` and `/path\\evil`)
  *   - embedded schemes (javascript:, http://, etc.) via URL parser
  *
- * NOTE: returns the full apex pathname (e.g. /palaeography/x)
+ * NOTE: returns the full apex pathname (e.g. /paleography/x)
  * — NOT basename-stripped. The callback's absolute-URL redirect handles
  * routing without double-prefix.
  */
@@ -158,8 +158,8 @@ export function safeReturnTo(value: string | null): string {
  * prepend. Consumer tools call this to redirect unauthenticated users.
  *
  * Example:
- *   buildLoginRedirect("/palaeography", "https://ampl.tools")
- *   // → "https://ampl.tools/auth/login?return_to=%2Fpalaeography"
+ *   buildLoginRedirect("/paleography", "https://ampl.tools")
+ *   // → "https://ampl.tools/auth/login?return_to=%2Fpaleography"
  *
  * The `returnTo` value should already be validated by `safeReturnTo`.
  */
@@ -184,8 +184,8 @@ export function buildLoginRedirect(
  * basename, same absolute URL output via `new URL(...)`.
  *
  * Example:
- *   buildLogoutHref("/palaeography", "https://ampl.tools")
- *   // → "https://ampl.tools/auth/logout?return_to=%2Fpalaeography"
+ *   buildLogoutHref("/paleography", "https://ampl.tools")
+ *   // → "https://ampl.tools/auth/logout?return_to=%2Fpaleography"
  *
  * The `returnTo` value should already be validated by `safeReturnTo`.
  */

@@ -5,7 +5,10 @@
  * sheet; holds the single mobile-sheet open/close state. All tool variation
  * comes through props. The public entry point for the component.
  *
- * @version v0.3.0
+ * v0.3.2: the cross-tool switcher moved from the WORKSHOP band into the
+ * institutional band; the mobile sheet gains a "switch tool" section.
+ *
+ * @version v0.3.2
  */
 import { useState } from "react";
 import { InstitutionalBand } from "./InstitutionalBand";
@@ -43,17 +46,17 @@ export function AmplHeader({
         labHome={labHome}
         menuOpen={menuOpen}
         onMenuToggle={() => setMenuOpen((v) => !v)}
-      />
-      <WorkshopBand
         tool={tool}
         toolName={toolName}
+        tools={tools}
+      />
+      <WorkshopBand
         nav={nav}
         context={context}
         localeSwitcher={localeSwitcher}
         account={account}
         signInHref={signInHref}
         signInLabel={signInLabel}
-        tools={tools}
       />
       <MobileSheet
         open={menuOpen}
@@ -63,6 +66,9 @@ export function AmplHeader({
         account={account}
         signInHref={signInHref}
         signInLabel={signInLabel}
+        tool={tool}
+        toolName={toolName}
+        tools={tools}
       />
     </header>
   );

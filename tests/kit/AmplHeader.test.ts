@@ -20,10 +20,10 @@ const SWITCHER = React.createElement("span", { "data-testid": "ls" }, "EN/ES");
 describe("AmplHeader", () => {
   it("signed-in: renders the account menu (POST sign-out form), no sign-in link", async () => {
     const html = await render({
-      tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER,
+      tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER,
       account: { name: "Juan Cobo", handle: "juan", avatarUrl: null, signOutHref: "/auth/logout", returnTo: "/palaeography" },
     });
-    expect(html).toContain("Palaeography");
+    expect(html).toContain("Paleography");
     expect(html).toContain('method="post"');
     expect(html).toContain('action="/auth/logout?return_to=%2Fpalaeography"');
     expect(html).not.toContain("header.signIn"); // no sign-in link rendered
@@ -46,16 +46,17 @@ describe("AmplHeader", () => {
     expect(html).toContain("Host sign in");
   });
 
-  it("switcher lists the default registry and marks the current tool", async () => {
-    const html = await render({ tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER, account: null });
-    expect(html).toContain("Palaeography");
-    expect(html).toContain("Scheduling");
+  it("switcher (v0.3.2 in the institutional band) shows the Workshop trigger, lists the registry, marks the current tool", async () => {
+    const html = await render({ tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER, account: null });
+    expect(html).toContain("Workshop"); // the relocated trigger label
+    expect(html).toContain("Paleography"); // current-tool banner
+    expect(html).toContain("Scheduling"); // switch-to entry
     expect(html).toContain('aria-current="true"');
   });
 
   it("active nav item gets the white underline (after: + text-white)", async () => {
     const html = await render({
-      tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER, account: null,
+      tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER, account: null,
       nav: [
         { label: "Dashboard", href: "/d", active: false },
         { label: "Library", href: "/l", active: true },
@@ -69,14 +70,14 @@ describe("AmplHeader", () => {
   });
 
   it("full size uses the 220px logo; compact uses 132px", async () => {
-    const full = await render({ tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER, account: null, size: "full" });
+    const full = await render({ tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER, account: null, size: "full" });
     expect(full).toContain("w-[220px]");
-    const compact = await render({ tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER, account: null });
+    const compact = await render({ tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER, account: null });
     expect(compact).toContain("w-[132px]");
   });
 
   it("renders the deep-plum WORKSHOP band and the mobile sheet (hidden at rest)", async () => {
-    const html = await render({ tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER, account: null });
+    const html = await render({ tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER, account: null });
     expect(html).toContain("bg-accent-deep");
     // The mobile sheet is always in the DOM but hidden until the hamburger
     // toggles it; SSR (menuOpen=false) must emit the `hidden` attribute.
@@ -85,7 +86,7 @@ describe("AmplHeader", () => {
 
   it("account takes precedence over signInHref (no sign-in link when signed in)", async () => {
     const html = await render({
-      tool: "calamus", toolName: "Palaeography", localeSwitcher: SWITCHER,
+      tool: "calamus", toolName: "Paleography", localeSwitcher: SWITCHER,
       account: { name: "Juan Cobo", handle: "juan", avatarUrl: null },
       signInHref: "/auth/login",
     });
