@@ -1,35 +1,31 @@
 /**
- * WORKSHOP band — the deep-plum band: tool switcher + contextual in-app nav
- * (active/disabled states) + the EN/ES switcher and account-chip-or-sign-in cluster.
+ * WORKSHOP band — the deep-plum band: contextual in-app nav (active/disabled
+ * states) + the EN/ES switcher and account-chip-or-sign-in cluster.
  *
- * @version v0.3.0
+ * v0.3.2: the cross-tool WORKSHOP switcher moved UP into the institutional band;
+ * this band no longer owns it.
+ *
+ * @version v0.3.2
  */
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ToolSwitcher } from "./ToolSwitcher";
 import { AccountMenu } from "./AccountMenu";
-import type { AccountInfo, NavItem, ToolId, ToolLink } from "./types";
+import type { AccountInfo, NavItem } from "./types";
 
 export function WorkshopBand({
-  tool,
-  toolName,
   nav,
   context,
   localeSwitcher,
   account,
   signInHref,
   signInLabel,
-  tools,
 }: {
-  tool: ToolId;
-  toolName: string;
   nav?: NavItem[];
   context?: ReactNode;
   localeSwitcher: ReactNode;
   account?: AccountInfo | null;
   signInHref?: string;
   signInLabel?: ReactNode;
-  tools: ToolLink[];
 }) {
   const { t } = useTranslation("kit");
   const hasNav = (nav && nav.length > 0) || context;
@@ -37,8 +33,6 @@ export function WorkshopBand({
   return (
     <div className="bg-accent-deep">
       <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-7 px-[30px]">
-        <ToolSwitcher tool={tool} toolName={toolName} tools={tools} />
-
         {/* Contextual tool nav — desktop only; mobile uses the sheet. */}
         {hasNav && (
           <nav className="hidden flex-1 items-center gap-[22px] md:flex">

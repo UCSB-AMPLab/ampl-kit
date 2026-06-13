@@ -66,7 +66,7 @@ const returnTo = safeReturnTo(url.searchParams.get("return_to"));
 
 // Build absolute login URL (bypasses React Router basename prepend)
 const loginUrl = buildLoginRedirect(returnTo, url.origin);
-// → "https://ampl.tools/auth/login?return_to=%2Fpalaeography"
+// → "https://ampl.tools/auth/login?return_to=%2Fpaleography"
 ```
 
 ### Non-refresh note
@@ -118,26 +118,26 @@ import { AmplHeader, DEFAULT_TOOLS } from "@ampl/kit/ui";
 // Compact signed-in header (standard in-app use)
 <AmplHeader
   tool="calamus"
-  toolName="Palaeography"
+  toolName="Paleography"
   localeSwitcher={<LocaleSwitcher variant="on-dark" buildHref={buildHref} current={locale} />}
   account={{ name: user.name, avatarUrl: user.avatar_url }}
   nav={[
-    { label: "Manuscripts", href: "/palaeography/manuscripts", active: true },
-    { label: "Groups",      href: "/palaeography/groups" },
+    { label: "Manuscripts", href: "/paleography/manuscripts", active: true },
+    { label: "Groups",      href: "/paleography/groups" },
   ]}
 />
 
 // Full signed-out front door (size="full" only on the front door)
 <AmplHeader
   tool="calamus"
-  toolName="Palaeography"
+  toolName="Paleography"
   size="full"
   localeSwitcher={<LocaleSwitcher variant="on-dark" buildHref={buildHref} current={locale} />}
-  signInHref="/auth/login?return_to=/palaeography"
+  signInHref="/auth/login?return_to=/paleography"
 />
 ```
 
-The tool switcher defaults to `DEFAULT_TOOLS` (Palaeography + Scheduling); pass
+The tool switcher defaults to `DEFAULT_TOOLS` (Paleography + Scheduling); pass
 a custom `tools` array to override. `SiteHeader` is deprecated as of v0.3.0 in
 favour of `AmplHeader`. See `CONSUMING.md` for the full prop reference and CSP
 requirements.

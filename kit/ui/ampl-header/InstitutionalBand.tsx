@@ -1,25 +1,37 @@
 /**
  * Institutional band — the white top band: AMPL logo lockup (links to the lab
- * home) + lab-site nav, scaling between full and compact; plus the mobile
- * hamburger that toggles the sheet. Owned by the kit (single AMPL identity).
+ * home) + the cross-tool WORKSHOP switcher + lab-site nav, scaling between full
+ * and compact; plus the mobile hamburger that toggles the sheet. Owned by the
+ * kit (single AMPL identity).
  *
- * @version v0.3.0
+ * v0.3.2: the WORKSHOP tool switcher moved here (first nav item) from the plum
+ * band, so its dropdown opens at page-top with nothing below to clip it.
+ *
+ * @version v0.3.2
  */
 import { useTranslation } from "react-i18next";
 import amplLogo from "../../assets/ampl-logo.svg";
 import { LAB_NAV } from "./lab-nav";
-import type { HeaderSize } from "./types";
+import { ToolSwitcher } from "./ToolSwitcher";
+import type { HeaderSize, ToolId, ToolLink } from "./types";
 
 export function InstitutionalBand({
   size,
   labHome,
   menuOpen,
   onMenuToggle,
+  tool,
+  toolName,
+  tools,
 }: {
   size: HeaderSize;
   labHome: string;
   menuOpen: boolean;
   onMenuToggle: () => void;
+  /** v0.3.2: the cross-tool switcher now lives here, as the first nav item. */
+  tool: ToolId;
+  toolName: string;
+  tools: ToolLink[];
 }) {
   const { t } = useTranslation("kit");
   const full = size === "full";
@@ -39,13 +51,15 @@ export function InstitutionalBand({
           <img src={amplLogo} alt="" className={`block h-auto ${full ? "w-[220px]" : "w-[132px]"}`} />
         </a>
 
-        {/* Lab nav — desktop only; mobile uses the sheet. */}
+        {/* Switcher + lab nav — desktop only; mobile uses the sheet. The
+            WORKSHOP switcher is first (left of the lab links). */}
         <nav
           aria-label={t("nav.ariaLabel")}
           className={`hidden flex-wrap items-center justify-end md:flex ${
-            full ? "max-w-[480px] gap-x-8 gap-y-1.5" : "max-w-[420px] gap-x-[26px] gap-y-1"
+            full ? "max-w-[620px] gap-x-8 gap-y-1.5" : "max-w-[540px] gap-x-[26px] gap-y-1"
           }`}
         >
+          <ToolSwitcher tool={tool} toolName={toolName} tools={tools} size={size} />
           {LAB_NAV.map((item) => (
             <a
               key={item.key}

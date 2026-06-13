@@ -44,7 +44,7 @@ export type HeaderSize = "full" | "compact";
 export interface AmplHeaderProps {
   /** Internal tool id — drives the switcher "current" highlight. */
   tool: ToolId;
-  /** Public display name shown in the WORKSHOP band (e.g. "Palaeography"). */
+  /** Public display name shown in the WORKSHOP band (e.g. "Paleography"). */
   toolName: string;
   /** Institutional-band scale. Default "compact"; "full" only on the signed-out front door. */
   size?: HeaderSize;
