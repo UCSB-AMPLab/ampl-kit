@@ -5,9 +5,11 @@
  * with the band `size`. The panel itself is the dark plum popover: the current
  * tool in a banner, then the other AMPL tools you can switch to.
  *
- * @version v0.3.2
+ * @version v0.3.3
  */
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useDismissibleDetails } from "./use-dismissible-details";
 import type { HeaderSize, ToolId, ToolLink } from "./types";
 
 export function ToolSwitcher({
@@ -26,9 +28,11 @@ export function ToolSwitcher({
   const current = tools.find((tl) => tl.id === tool);
   const others = tools.filter((tl) => tl.id !== tool);
   const full = size === "full";
+  const ref = useRef<HTMLDetailsElement>(null);
+  useDismissibleDetails(ref);
 
   return (
-    <details className="relative [&_summary::-webkit-details-marker]:hidden">
+    <details ref={ref} className="relative [&_summary::-webkit-details-marker]:hidden">
       <summary
         aria-haspopup="true"
         className={`flex cursor-pointer list-none items-center gap-1.5 whitespace-nowrap font-title font-medium uppercase leading-none tracking-[0.5px] text-fg-1 no-underline hover:text-accent ${

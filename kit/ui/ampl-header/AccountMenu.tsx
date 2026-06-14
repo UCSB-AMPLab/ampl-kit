@@ -2,10 +2,12 @@
  * Account menu — the signed-in account chip (avatar or initials + name) on the
  * WORKSHOP band, a <details> menu with the @handle, optional links, and a POST sign-out.
  *
- * @version v0.3.0
+ * @version v0.3.3
  */
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { buildSignOutAction } from "../lib/sign-out";
+import { useDismissibleDetails } from "./use-dismissible-details";
 import type { AccountInfo } from "./types";
 
 /** Two-letter initials for the avatar fallback (first + last word). */
@@ -19,9 +21,11 @@ function initials(name: string): string {
 export function AccountMenu({ account }: { account: AccountInfo }) {
   const { t } = useTranslation("kit");
   const signOutAction = buildSignOutAction(account.signOutHref ?? "/auth/logout", account.returnTo);
+  const ref = useRef<HTMLDetailsElement>(null);
+  useDismissibleDetails(ref);
 
   return (
-    <details className="relative [&_summary::-webkit-details-marker]:hidden">
+    <details ref={ref} className="relative [&_summary::-webkit-details-marker]:hidden">
       <summary
         aria-haspopup="true"
         className="flex cursor-pointer list-none items-center gap-[9px] whitespace-nowrap rounded-pill border border-white/20 bg-black/[0.18] py-[5px] pl-1.5 pr-3"

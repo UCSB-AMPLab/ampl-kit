@@ -5,7 +5,10 @@
  * v0.3.2: the cross-tool WORKSHOP switcher moved UP into the institutional band;
  * this band no longer owns it.
  *
- * @version v0.3.2
+ * v0.3.3: inactive nav links bumped white/60 → white/70 — on bg-accent-deep
+ * (#743A6A) white/60 is ≈4.1:1 (below WCAG AA 4.5:1); white/70 is ≈4.95:1 (G3).
+ *
+ * @version v0.3.3
  */
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,7 +57,7 @@ export function WorkshopBand({
                   className={`relative py-[18px] font-body text-[13px] uppercase tracking-[0.4px] no-underline ${
                     item.active
                       ? "text-white after:absolute after:inset-x-0 after:bottom-[14px] after:h-0.5 after:bg-white"
-                      : "text-white/60 hover:text-white"
+                      : "text-white/70 hover:text-white"
                   }`}
                 >
                   {item.label}

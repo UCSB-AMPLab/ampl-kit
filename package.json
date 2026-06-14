@@ -1,6 +1,6 @@
 {
   "name": "@ampl/kit",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "type": "module",
   "description": "Shared foundation for the AMPL tools suite: the ampl-auth Worker (ampl.tools/auth) + the @ampl/kit design system, surfaces, and session-validation helper consumed by every tool.",
