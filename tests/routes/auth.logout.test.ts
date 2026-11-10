@@ -59,6 +59,7 @@ describe("auth.logout action", () => {
       method: "POST",
       headers: {
         Cookie: `__Host-ampl_session=${created.rawCookieValue}`,
+        "Sec-Fetch-Site": "same-origin",
       },
     });
 
@@ -104,6 +105,7 @@ describe("auth.logout action", () => {
   it("no session cookie → still 3xx redirect without error", async () => {
     const request = new Request("https://example.test/auth/logout", {
       method: "POST",
+      headers: { "Sec-Fetch-Site": "same-origin" },
       // No Cookie header
     });
 
@@ -132,6 +134,7 @@ describe("auth.logout action", () => {
     try {
       const request = new Request("https://example.test/auth/logout", {
         method: "POST",
+        headers: { "Sec-Fetch-Site": "same-origin" },
       });
       const result = (await action({
         request,
@@ -157,6 +160,7 @@ describe("auth.logout action", () => {
         method: "POST",
         headers: {
           Cookie: `__Host-ampl_session=${created.rawCookieValue}`,
+          "Sec-Fetch-Site": "same-origin",
         },
       },
     );
@@ -192,6 +196,7 @@ describe("auth.logout action", () => {
       "https://example.test/auth/logout?return_to=%2F%2Fevil.com",
       {
         method: "POST",
+        headers: { "Sec-Fetch-Site": "same-origin" },
       },
     );
 
@@ -214,5 +219,59 @@ describe("auth.logout action", () => {
     expect(loc).toMatch(/^https?:\/\//);
     expect(loc).toContain("/auth/login");
     expect(loc).not.toContain("evil.com");
+  });
+});
+
+let ipSeq = 0;
+
+describe("auth.logout same-origin check", () => {
+  async function postWith(headers: Record<string, string>) {
+    const db = getDb();
+    const userId = await seedUser(`logout-origin-${Math.random()}@example.com`, "logout-origin");
+    const created = await createSessionForUser(db, userId);
+    const request = new Request("https://ampl.tools/auth/logout", {
+      method: "POST",
+      headers: {
+        Cookie: `__Host-ampl_session=${created.rawCookieValue}`,
+        "CF-Connecting-IP": `10.88.0.${++ipSeq}`,
+        ...headers,
+      },
+    });
+    let thrown: unknown;
+    try {
+      await action({ request, context: buildContext(), params: {} } as any);
+    } catch (err) {
+      thrown = err;
+    }
+    const row = await db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.id, created.sessionId))
+      .get();
+    return { resp: thrown as Response, sessionKept: row !== undefined };
+  }
+
+  it("cross-site POST → 403; the session is kept", async () => {
+    const { resp, sessionKept } = await postWith({ "Sec-Fetch-Site": "cross-site", Origin: "https://evil.example" });
+    expect(resp.status).toBe(403);
+    expect(sessionKept).toBe(true);
+  });
+
+  it("no Origin and no Sec-Fetch-Site → 403; the session is kept", async () => {
+    const { resp, sessionKept } = await postWith({});
+    expect(resp.status).toBe(403);
+    expect(sessionKept).toBe(true);
+  });
+
+  it("Origin: null with Sec-Fetch-Site: same-origin (a no-referrer form post) signs out", async () => {
+    const { resp, sessionKept } = await postWith({ "Sec-Fetch-Site": "same-origin", Origin: "null" });
+    expect(resp.status).toBe(302);
+    expect(sessionKept).toBe(false);
+  });
+
+  it("the app origin as Origin with Sec-Fetch-Site: same-origin signs out", async () => {
+    const { resp, sessionKept } = await postWith({ "Sec-Fetch-Site": "same-origin", Origin: "https://ampl.tools" });
+    expect(resp.status).toBe(302);
+    expect(sessionKept).toBe(false);
   });
 });

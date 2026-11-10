@@ -28,6 +28,11 @@
  * Only `action` is exported — no `loader`, no default component. React Router
  * v7 automatically returns 405 for GET requests when only `action` is present.
  *
+ * The action refuses a POST that is not same-origin with a 403 (the same
+ * `isSameOriginPost` check the email routes and `/ping` use), so another site
+ * cannot sign a user out. Forms in other tools on `ampl.tools` are
+ * same-origin and pass.
+ *
  * Threat-model linkages:
  *   - Flood: AUTH_RATE_LIMITER per-IP on logout:<ip>.
  *   - Open redirect: safeReturnTo guards return_to before redirect.
@@ -46,12 +51,18 @@ import {
 } from "~/sessions.server";
 import { cloudflareContext } from "~/context";
 import { logError } from "~/lib/logging.server";
+import { emailLoginConfig, isSameOriginPost } from "~/lib/email-login.server";
 import { BASENAME } from "~/lib/paths";
 import { safeReturnTo } from "@ampl/kit/auth";
 import type { Route } from "./+types/auth.logout";
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
+  // This route has no component, so React Router's own Origin check never
+  // applies to it. A cross-site form post must not be able to sign a user out.
+  if (!isSameOriginPost(request, emailLoginConfig(env).appOrigin)) {
+    throw new Response("Forbidden", { status: 403 });
+  }
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
   const { success } = await env.AUTH_RATE_LIMITER.limit({
     key: `logout:${ip}`,
