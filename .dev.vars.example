@@ -10,3 +10,16 @@
 
 GITHUB_CLIENT_ID=""
 GITHUB_CLIENT_SECRET=""
+
+# Email sign-in links (local dev). The Turnstile values are Cloudflare's
+# documented test keys: the site key always renders a passing widget, the
+# secret always verifies. Production uses a real widget's keys:
+# TURNSTILE_SITE_KEY as a var in wrangler.jsonc, TURNSTILE_SECRET_KEY as a
+# secret. APP_URL is overridden so links in the email point at the dev server
+# and the same-origin check accepts its Origin. Sending needs the ampl-email
+# Worker running locally for the AUTH_EMAIL service binding (its AuthEmail
+# entrypoint), with AUTH_APP_URL set to the same origin.
+EMAIL_LOGIN_ENABLED="true"
+TURNSTILE_SITE_KEY="1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"
+APP_URL="http://localhost:5173/auth"
