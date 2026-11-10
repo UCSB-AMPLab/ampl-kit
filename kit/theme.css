@@ -47,6 +47,22 @@
   /* Accent tints are opacity modifiers, not tokens:
      bg-accent/8  bg-accent/14  bg-accent/20  text-accent/60 */
 
+  /* ---------- Application colors (Light values) ----------
+     Tokens for the tools, where a person types, compares two texts and
+     works through a manuscript. They add to the palette above and change
+     none of it. */
+  --color-on-accent:      #ffffff;   /* text + icons on an accent fill */
+  --color-fg-2-strong:    #5B6875;   /* small secondary text; fg-2 stays for 24px+ and the website */
+  --color-control-border: #7C8794;   /* visible boundary of a control (3:1 on bg) */
+  --color-focus-ring:     #A5469A;   /* 3px keyboard focus outline, offset 2px */
+  --color-error-text:     #A1261B;   /* written error message beside its field */
+  --color-diff-own-bg:    #FBE9DC;   /* a differing word on the person's side */
+  --color-diff-own-line:  #9A4A14;   /* solid underline under it */
+  --color-diff-ref-bg:    #E3ECF7;   /* a differing word on the reference side */
+  --color-diff-ref-line:  #2F5A8F;   /* double underline under it */
+  --color-paper:          #f1ede4;   /* surface behind a manuscript image */
+  --color-paper-border:   #d9d3c5;   /* frame around that surface */
+
   /* ---------- Font families ---------- */
   --font-body:    "Ubuntu Mono", ui-monospace, Menlo, Consolas, monospace;
   --font-title:   "Roboto Slab", "Produkt", Georgia, serif;
