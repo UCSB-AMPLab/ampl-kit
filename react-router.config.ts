@@ -16,6 +16,12 @@ export default {
   // Served under ampl.tools/auth. Keep in sync with Vite `base` in
   // vite.config.ts and BASENAME in app/lib/paths.ts.
   basename: "/auth",
+  // Pages here are served with `Referrer-Policy: no-referrer`, so browsers send
+  // `Origin: null` on their own form posts. React Router compares Origin with
+  // Host on routes that have a component and would refuse those posts. Each
+  // action does the real check itself (isSameOriginPost: `Origin: null` only
+  // with `Sec-Fetch-Site: same-origin`).
+  allowedActionOrigins: ["null"],
   future: {
     v8_viteEnvironmentApi: true,
     v8_middleware: true,

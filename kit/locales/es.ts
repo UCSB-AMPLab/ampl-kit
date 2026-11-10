@@ -15,6 +15,22 @@
  */
 export default {
   email: {
+    auth: {
+      // Account-access messages rendered by the AuthEmail entrypoint.
+      // {{minutes}} is the link lifetime.
+      linkSubject: "[AMPL] Tu enlace para iniciar sesión",
+      linkPreheader: "Usa este enlace para iniciar sesión en AMPL.",
+      linkHeading: "Inicia sesión en AMPL",
+      linkBody: "Alguien pidió un enlace para iniciar sesión en las herramientas de AMPL con esta dirección de correo. Si fuiste tú, usa el botón de abajo.",
+      linkButton: "Iniciar sesión",
+      linkNote: "El enlace sirve una sola vez y vence en {{minutes}} minutos. Si no lo pediste, puedes ignorar este correo.",
+      githubSubject: "[AMPL] Inicia sesión con GitHub",
+      githubPreheader: "Para entrar a tu cuenta de AMPL, usa GitHub.",
+      githubHeading: "Inicia sesión con GitHub",
+      githubBody: "Alguien pidió un enlace para iniciar sesión con esta dirección de correo. No enviamos ninguno, porque a tu cuenta de AMPL se entra con GitHub.",
+      githubButton: "Ir a iniciar sesión",
+      githubNote: "Si no lo pediste, puedes ignorar este correo.",
+    },
     footer: {
       transactional: "Este es un mensaje transaccional automático de AMPL.",
       tagline: "Archives, Memory, and Preservation Lab · UC Santa Barbara",

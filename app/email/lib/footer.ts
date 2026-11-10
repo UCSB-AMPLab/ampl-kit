@@ -15,7 +15,7 @@
  * ensures every delivered email complies with RFC 8058 and CAN-SPAM hygiene
  * requirements.
  *
- * @version v0.2.0
+ * @version v0.4.0
  */
 
 /**
@@ -48,13 +48,16 @@ const FOOTER_COPY = {
  * and the unsubscribe URL. EN/ES keys live in kit/locales under
  * `email.footer.*`.
  *
+ * Pass `null` for `unsubUrl` to leave out the unsubscribe line, as for
+ * account-access mail (`category: "auth"`), which an unsubscribe does not stop.
+ *
  * @param locale    - "en" or "es" (defaults to "en" in `send()` when absent)
- * @param unsubUrl  - the full unsubscribe URL including signed token
+ * @param unsubUrl  - the full unsubscribe URL including signed token, or null
  * @returns `{ html: string, text: string }` footer fragments
  */
 export function buildFooter(
   locale: "en" | "es",
-  unsubUrl: string,
+  unsubUrl: string | null,
 ): { html: string; text: string } {
   const copy = FOOTER_COPY[locale];
 
@@ -63,7 +66,7 @@ export function buildFooter(
     `<div style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:16px;font-size:12px;color:#6b7280;">`,
     `<p>${copy.transactional}</p>`,
     `<p>${copy.tagline}</p>`,
-    `<p><a href="${unsubUrl}">${copy.unsubscribeLabel}</a></p>`,
+    ...(unsubUrl ? [`<p><a href="${unsubUrl}">${copy.unsubscribeLabel}</a></p>`] : []),
     `</div>`,
   ].join("\n");
 
@@ -71,7 +74,7 @@ export function buildFooter(
     "---",
     copy.transactional,
     copy.tagline,
-    `${copy.unsubscribeLabel}: ${unsubUrl}`,
+    ...(unsubUrl ? [`${copy.unsubscribeLabel}: ${unsubUrl}`] : []),
   ].join("\n");
 
   return { html, text };

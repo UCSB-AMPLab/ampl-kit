@@ -12,7 +12,8 @@
   },
   "login": {
     "title": "Iniciar sesión",
-    "continueWithGithub": "Continuar con GitHub"
+    "continueWithGithub": "Continuar con GitHub",
+    "or": "o"
   },
   "signedIn": {
     "welcome": "Bienvenido/a, {{name}}",
@@ -30,7 +31,13 @@
     "oauth-cancelled": "Cancelaste el inicio de sesión.",
     "state-mismatch": "La sesión de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
     "no-verified-email": "Tu cuenta de GitHub debe tener una dirección de correo primaria verificada.",
-    "rate-limited": "Demasiadas solicitudes. Por favor, espera un momento antes de intentarlo de nuevo."
+    "rate-limited": "Demasiadas solicitudes. Por favor, espera un momento antes de intentarlo de nuevo.",
+    "email-invalid": "Escribe una dirección de correo válida.",
+    "email-domain": "El inicio de sesión por correo solo está disponible para direcciones de {{domains}}. Con cualquier otra dirección, continúa con GitHub.",
+    "turnstile-failed": "No se pudo completar la verificación de seguridad. Por favor, inténtalo de nuevo.",
+    "email-unavailable": "El inicio de sesión por correo no está disponible en este momento. Continúa con GitHub o inténtalo más tarde.",
+    "email-in-use": "La dirección de correo de esta cuenta de GitHub ya pertenece a otra cuenta de AMPL. Inicia sesión con esa cuenta.",
+    "name-required": "Escribe tu nombre para continuar."
   },
   "nav": {
     "ariaLabel": "Navegación del sitio del laboratorio",
@@ -38,5 +45,29 @@
     "projects": "Proyectos",
     "opportunities": "Oportunidades",
     "people": "Personas"
+  },
+  "emailLogin": {
+    "label": "Correo electrónico",
+    "placeholder": "nombre@{{domain}}",
+    "submit": "Enviarme un enlace para iniciar sesión",
+    "hint": "Disponible para direcciones de {{domains}}.",
+    "sent": {
+      "title": "Revisa tu correo",
+      "body": "Si esa dirección está habilitada para entrar aquí, te enviamos un mensaje. Ábrelo para terminar de iniciar sesión.",
+      "expiry": "Cada enlace sirve una sola vez y vence a los {{minutes}} minutos. Si no te llega nada, revisa la carpeta de correo no deseado o pide un enlace nuevo.",
+      "back": "Volver al inicio de sesión"
+    },
+    "verify": {
+      "title": "Iniciar sesión como {{email}}",
+      "body": "Confirma para terminar de iniciar sesión en este dispositivo.",
+      "nameLabel": "Tu nombre",
+      "nameHint": "Las demás personas verán este nombre en las herramientas de AMPL.",
+      "submit": "Iniciar sesión",
+      "invalidTitle": "Este enlace ya no sirve",
+      "invalidBody": "El enlace venció, ya se usó o lo reemplazó uno más reciente. Pide uno nuevo en la página de inicio de sesión.",
+      "githubTitle": "Inicia sesión con GitHub",
+      "githubBody": "Para entrar a esta cuenta, usa el botón “Continuar con GitHub” en la página de inicio de sesión.",
+      "toLogin": "Ir a iniciar sesión"
+    }
   }
 }

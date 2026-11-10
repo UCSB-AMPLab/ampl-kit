@@ -23,7 +23,7 @@
 
 import { verifyUnsubToken } from "../lib/unsub-token";
 import { getEmailDb, schema } from "../db/client.email";
-import { normalizeEmail } from "../lib/suppression";
+import { normalizeEmail, recordSuppression } from "../lib/suppression";
 import { logError } from "../../lib/logging.server";
 
 // ---------------------------------------------------------------------------
@@ -294,27 +294,10 @@ export async function handleUnsubscribe(
         return new Response("Forbidden: invalid token", { status: 403 });
       }
 
-      // Insert suppression — insert-or-ignore for repeat POST
+      // Record the suppression. A repeat POST changes nothing, and an
+      // existing bounce or complaint is kept (never lowered to unsubscribe).
       const db = getEmailDb(env);
-      try {
-        await db.insert(schema.suppressions).values({
-          address: normalizeEmail(address),
-          reason: "unsubscribe",
-          source: "user_request",
-          createdAt: Date.now(),
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const causeMsg =
-          err instanceof Error && err.cause instanceof Error
-            ? err.cause.message
-            : "";
-        const isUnique =
-          msg.includes("UNIQUE constraint failed") ||
-          causeMsg.includes("UNIQUE constraint failed");
-        if (!isUnique) throw err;
-        // Already suppressed — not an error
-      }
+      await recordSuppression(db, address, "unsubscribe", "user_request");
 
       const html = buildBilingualConfirmedPage();
       const headers = new Headers({

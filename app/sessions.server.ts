@@ -45,7 +45,7 @@
  *   - No mid-session token rotation; sign-out is device-only (DELETE current row).
  *   - Expired rows are inert (every read filters `expires_at > now`).
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { eq } from "drizzle-orm";
@@ -139,6 +139,21 @@ function isValidRawCookieValue(value: string): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Mints the values for a new session without writing anything: 32 random
+ * bytes as the cookie value, its SHA-256 hex as the row id, and the expiry.
+ * createSessionForUser and the email sign-in's conditional insert both use
+ * it, so the two paths produce identical sessions.
+ */
+export function mintSessionToken(now: number = Date.now()): CreatedSession {
+  const rawCookieValue = encodeHexLowerCase(crypto.getRandomValues(new Uint8Array(32)));
+  return {
+    sessionId: hashCookieValue(rawCookieValue),
+    rawCookieValue,
+    expiresAt: now + SESSION_DURATION_MS,
+  };
+}
+
+/**
  * Creates a fresh session for the given user and returns the cookie value to
  * set on the response. Caller is responsible for emitting the Set-Cookie
  * header via `sessionCookieHeader`.
@@ -148,11 +163,8 @@ export async function createSessionForUser(
   userId: number,
 ): Promise<CreatedSession> {
   try {
-    const rawBytes = crypto.getRandomValues(new Uint8Array(32));
-    const rawCookieValue = encodeHexLowerCase(rawBytes);
-    const sessionId = hashCookieValue(rawCookieValue);
     const now = Date.now();
-    const expiresAt = now + SESSION_DURATION_MS;
+    const { sessionId, rawCookieValue, expiresAt } = mintSessionToken(now);
     await db.insert(sessions).values({
       id: sessionId,
       userId,

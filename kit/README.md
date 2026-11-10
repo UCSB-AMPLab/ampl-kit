@@ -31,10 +31,10 @@ consumer tool uses to validate sessions locally with a single D1 SELECT per requ
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `integer` PK | Canonical AMPL user id — FK target for tool authz tables |
-| `github_id` | `integer` UNIQUE NOT NULL | GitHub account id (stable across renames) |
-| `email` | `text` NOT NULL | GitHub-verified primary email (invitation matching) |
-| `handle` | `text` NOT NULL | GitHub login handle |
-| `name` | `text` | GitHub display name (nullable) |
+| `github_id` | `integer` UNIQUE, nullable | GitHub account id (stable across renames); NULL for an account whose owner signs in by email link only |
+| `email` | `text` UNIQUE NOT NULL | Verified address, trimmed and lower-cased: the GitHub-verified primary email, or the address a sign-in link was sent to (invitation matching) |
+| `handle` | `text` NOT NULL | GitHub login handle, or `~<id>` for an email-only account (never a valid GitHub login) |
+| `name` | `text` | GitHub display name, or the name given on first email sign-in (nullable) |
 | `avatar_url` | `text` | GitHub avatar URL (nullable) |
 | `created_at` | `integer` NOT NULL | Unix ms |
 | `last_seen_at` | `integer` | Unix ms (nullable) |

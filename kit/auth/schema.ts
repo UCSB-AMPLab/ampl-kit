@@ -3,7 +3,8 @@
  *
  * This file is the canonical, read-only description of the two database tables
  * the shared AMPL identity system is built on — `users` (one row per person,
- * keyed by their GitHub id) and `sessions` (one row per active sign-in). It is
+ * unique by email, with a GitHub id when the person signs in with GitHub) and
+ * `sessions` (one row per active sign-in). It is
  * the stable shape that consuming tools pin to, so any change to a column name,
  * a type, an index, or the link between a session and its user is treated as a
  * breaking change. The file defines just those two tables plus two helper
@@ -13,19 +14,23 @@
  * to the database and any tables specific to the auth tool itself — this is the
  * shared surface, nothing more.
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { sqliteTable, integer, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. users — canonical AMPL identity, keyed by GitHub id
+// 1. users — canonical AMPL identity
+//
+// `github_id` is NULL for an account whose owner signs in by email link only. Such an
+// account has the handle `~<id>` (never a valid GitHub login) until it is
+// linked to GitHub. `email` is stored trimmed and lower-cased and is unique.
 // ─────────────────────────────────────────────────────────────────────────────
 export const users = sqliteTable(
   "users",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    githubId: integer("github_id").notNull().unique(),
+    githubId: integer("github_id").unique(),
     email: text("email").notNull(),
     handle: text("handle").notNull(),
     name: text("name"),
@@ -35,11 +40,13 @@ export const users = sqliteTable(
   },
   (t) => [
     uniqueIndex("users_github_id_unique").on(t.githubId),
+    uniqueIndex("users_email_unique").on(t.email),
   ],
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. sessions — opaque 256-bit token PK; issued after GitHub OAuth
+// 2. sessions — opaque 256-bit token PK; issued after GitHub OAuth or an
+//    email sign-in link
 // ─────────────────────────────────────────────────────────────────────────────
 export const sessions = sqliteTable(
   "sessions",
@@ -76,13 +83,17 @@ export type AuthDbSchema = { users: typeof users; sessions: typeof sessions };
  *
  * `id` is the canonical AMPL user id — the value consumer tools should
  * foreign-key their own authorization tables to.
- * `email` is the GitHub-verified primary email (used for invitation matching).
+ * `githubId` is null for an account whose owner signs in by email link only.
+ * `email` is verified: the GitHub-verified primary email, or the address the
+ * sign-in link was sent to (used for invitation matching).
+ * `handle` is the GitHub login, or `~<id>` for an email-only account.
  * `name` and `avatarUrl` are nullable — GitHub profile fields that may be
- * absent for some accounts.
+ * absent for some accounts; an email-only account has the name the person
+ * gave on first sign-in and no avatar.
  */
 export interface AuthenticatedUser {
   id: number;
-  githubId: number;
+  githubId: number | null;
   email: string;
   handle: string;
   name: string | null;

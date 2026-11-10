@@ -6,9 +6,10 @@
  * helper that inserts a user row straight into the table. Seeding directly lets
  * a test set up its world without driving the real GitHub OAuth code path — so,
  * for instance, the auth middleware can be tested in isolation. Genuine session
- * creation still flows through `app/sessions.server.ts`.
+ * creation still flows through `app/sessions.server.ts`. Pass `githubId: null`
+ * to seed an account whose owner signs in by email link only.
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { env } from "cloudflare:test";
@@ -24,10 +25,12 @@ export function getDb(): TestDb {
 export async function seedUser(
   email: string,
   handle: string,
-  opts: { githubId?: number; name?: string; avatarUrl?: string } = {},
+  opts: { githubId?: number | null; name?: string; avatarUrl?: string } = {},
 ): Promise<number> {
   const db = getDb();
-  const githubId = opts.githubId ?? Math.floor(Math.random() * 2 ** 31);
+  // Omitted → a random GitHub id; null → an email-only account.
+  const githubId =
+    opts.githubId === undefined ? Math.floor(Math.random() * 2 ** 31) : opts.githubId;
   const createdAt = Date.now();
   const result = await db
     .insert(schema.users)

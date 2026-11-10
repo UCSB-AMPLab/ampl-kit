@@ -17,6 +17,7 @@ import { desc } from "drizzle-orm";
 import { cloudflareContext } from "~/context";
 import { getDb, schema } from "~/db/client.server";
 import { logError } from "~/lib/logging.server";
+import { emailLoginConfig, isSameOriginPost } from "~/lib/email-login.server";
 
 const LAST_N = 20;
 const NOTE_MAX = 500;
@@ -34,6 +35,10 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  const { appOrigin } = emailLoginConfig(context.get(cloudflareContext).env);
+  if (!isSameOriginPost(request, appOrigin)) {
+    throw new Response("Forbidden", { status: 403 });
+  }
   const form = await request.formData();
   const rawNote = form.get("note");
   const note =

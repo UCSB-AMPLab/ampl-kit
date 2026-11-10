@@ -229,3 +229,74 @@ describe("buildLogoutHref", () => {
     expect(url).toContain("return_to=%2Fpath%20with%20spaces");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// validateSession — the returned shape is stable
+// ─────────────────────────────────────────────────────────────────────────────
+describe("validateSession — shape", () => {
+  async function validated(githubId: number | null) {
+    const db = drizzle(env.AUTH_DB, { schema });
+    const userId = await seedUser(`shape-${githubId ?? "mail"}@ucsb.edu`, githubId ? "shape" : "~1", {
+      githubId,
+      name: "Shape",
+    });
+    const created = await createSessionForUser(db, userId);
+    const req = new Request("https://ampl.tools/palaeography/", {
+      headers: { Cookie: `__Host-ampl_session=${created.rawCookieValue}` },
+    });
+    return { userId, user: await validateSession(authDb, req) };
+  }
+
+  it("returns exactly id, githubId, email, handle, name, avatarUrl for a GitHub account", async () => {
+    const { userId, user } = await validated(424242);
+    expect(Object.keys(user!).sort()).toEqual(["avatarUrl", "email", "githubId", "handle", "id", "name"]);
+    expect(user).toEqual({
+      id: userId,
+      githubId: 424242,
+      email: "shape-424242@ucsb.edu",
+      handle: "shape",
+      name: "Shape",
+      avatarUrl: null,
+    });
+  });
+
+  it("returns the same keys with githubId null for an email-only account", async () => {
+    const { user } = await validated(null);
+    expect(Object.keys(user!).sort()).toEqual(["avatarUrl", "email", "githubId", "handle", "id", "name"]);
+    expect(user!.githubId).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// safeReturnTo — checked after URL normalization
+// ─────────────────────────────────────────────────────────────────────────────
+describe("safeReturnTo — normalization cannot produce an off-site redirect", () => {
+  const offSite = ["/x/..//evil.example", "/..//evil", "/\\evil.example", "/./..//evil.example/path", "/a/b/../..//evil.example"];
+  for (const value of offSite) {
+    it(`rejects ${JSON.stringify(value)}`, () => {
+      expect(safeReturnTo(value)).toBe("/");
+    });
+  }
+
+  it("keeps /%2F%2Fevil.example on the app origin", () => {
+    const out = safeReturnTo("/%2F%2Fevil.example");
+    expect(out.startsWith("//")).toBe(false);
+    expect(new URL(out, "https://ampl.tools").origin).toBe("https://ampl.tools");
+  });
+
+  it("returns the resolved value of a safe path, so a browser cannot resolve it elsewhere", () => {
+    for (const value of ["/x/..//evil.example", "/a/./b/../c"]) {
+      const out = safeReturnTo(value);
+      expect(new URL(out, "https://ampl.tools").origin).toBe("https://ampl.tools");
+      expect(out.startsWith("//")).toBe(false);
+    }
+    expect(safeReturnTo("/a/./b/../c")).toBe("/a/c");
+  });
+
+  it("keeps ordinary paths with query and hash unchanged", () => {
+    expect(safeReturnTo("/paleography/groups?x=1&y=two#section-3")).toBe(
+      "/paleography/groups?x=1&y=two#section-3",
+    );
+    expect(safeReturnTo("/scheduling")).toBe("/scheduling");
+  });
+});

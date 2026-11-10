@@ -7,6 +7,7 @@
     "app/**/.client/**/*",
     "kit/**/*",
     "workers/**/*",
+    "react-router.config.ts",
     "tests/**/*",
     "worker-configuration.d.ts",
     "workers-email-configuration.d.ts"
