@@ -15,7 +15,7 @@
  * Named exports only. No default export. No runtime values — type declarations
  * are compile-time only.
  *
- * @version v0.2.1
+ * @version v0.4.0
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -152,13 +152,16 @@ export interface IcsEvent {
  *   Worker delivers to a single recipient per call — passing more than one
  *   address is rejected (`reason:"error"`, `detail:"multi_recipient_unsupported"`).
  * - `tool` — identifies the originating tool for the send log; extend the union
- *   as new tools are added.
+ *   as new tools are added. `"auth"` appears in the send log for messages
+ *   from the AuthEmail entrypoint; through `send()` it is an ordinary tool
+ *   name with no special treatment.
  *
  * Optional fields:
  * - `idempotencyKey` — when present, the Worker deduplicates on this key via a
  *   D1 UNIQUE constraint; absent means non-idempotent (each call is a new send).
  * - `locale` — selects the compliance-footer language ("en" | "es"); defaults
  *   to "en".
+
  *
  * Optional fields typed ahead of implementation:
  * - `attachments` — for `.ics` attachments (Scheduling) and similar. Pass raw
@@ -171,7 +174,7 @@ export interface SendMessage {
   subject: string; // caller includes "[ToolName] " prefix
   html: string;
   text: string;
-  tool: "calamus" | "scheduling";
+  tool: "calamus" | "scheduling" | "auth";
 
   /** When present, deduplicates on this key. Absent = non-idempotent. */
   idempotencyKey?: string;

@@ -505,3 +505,163 @@ describe("auth.callback - absolute redirect", () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Linking with email-only accounts
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("auth.callback - linking email-only accounts", () => {
+  it("links a later GitHub sign-in to the email-only row with the same email, keeping its id", async () => {
+    const id = await seedUser("link@ucsb.edu", "~0", { githubId: null, name: "Chosen Name" });
+    const db = getDb();
+    await db.update(schema.users).set({ handle: `~${id}` }).where(eq(schema.users.id, id));
+
+    const fetchSpy = installFetchSpy({
+      githubId: 77001,
+      login: "linker",
+      name: "GitHub Name",
+      avatarUrl: "https://avatars.githubusercontent.com/u/77001",
+      email: "Link@UCSB.edu",
+    });
+    try {
+      setTokensOk();
+      const resp = await callLoader({ ...VALID_OPTS });
+      expect(extractSessionCookie(resp)).not.toBeNull();
+
+      const rows = await db.select().from(schema.users).where(eq(schema.users.email, "link@ucsb.edu")).all();
+      expect(rows.length).toBe(1);
+      expect(rows[0].id).toBe(id);
+      expect(rows[0].githubId).toBe(77001);
+      expect(rows[0].handle).toBe("linker");
+      expect(rows[0].avatarUrl).toBe("https://avatars.githubusercontent.com/u/77001");
+      const sessionRows = await db.select().from(schema.sessions).where(eq(schema.sessions.userId, id)).all();
+      expect(sessionRows.length).toBe(1);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("never merges two rows that both have a github_id", async () => {
+    const existing = await seedUser("both@ucsb.edu", "first-gh", { githubId: 77002 });
+    const fetchSpy = installFetchSpy({ githubId: 77003, login: "second-gh", email: "both@ucsb.edu" });
+    try {
+      setTokensOk();
+      const resp = await callLoader({ ...VALID_OPTS });
+      expect(resp.headers.get("Location")).toContain("/login?error=email-in-use");
+      expect(extractSessionCookie(resp)).toBeNull();
+
+      const db = getDb();
+      const row = await db.select().from(schema.users).where(eq(schema.users.id, existing)).get();
+      expect(row!.githubId).toBe(77002);
+      expect(row!.handle).toBe("first-gh");
+      const other = await db.select().from(schema.users).where(eq(schema.users.githubId, 77003)).get();
+      expect(other).toBeUndefined();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("skips an email change that would collide with another row instead of throwing", async () => {
+    const a = await seedUser("a-col@ucsb.edu", "a-col", { githubId: 77004 });
+    const b = await seedUser("b-col@ucsb.edu", "b-col", { githubId: 77005 });
+    const fetchSpy = installFetchSpy({ githubId: 77005, login: "b-renamed", email: "a-col@ucsb.edu" });
+    try {
+      setTokensOk();
+      const resp = await callLoader({ ...VALID_OPTS });
+      expect(resp.status).toBeGreaterThanOrEqual(300);
+      expect(resp.status).toBeLessThan(400);
+      expect(extractSessionCookie(resp)).not.toBeNull();
+
+      const db = getDb();
+      const rowB = await db.select().from(schema.users).where(eq(schema.users.id, b)).get();
+      expect(rowB!.email).toBe("b-col@ucsb.edu");
+      expect(rowB!.handle).toBe("b-renamed");
+      const rowA = await db.select().from(schema.users).where(eq(schema.users.id, a)).get();
+      expect(rowA!.email).toBe("a-col@ucsb.edu");
+      expect(rowA!.githubId).toBe(77004);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Races between the lookups and the write
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("auth.callback - races in account resolution", () => {
+  const profile = (githubId: number, email: string) => ({
+    githubId,
+    login: `gh-${githubId}`,
+    name: "Racer",
+    avatarUrl: `https://avatars.githubusercontent.com/u/${githubId}`,
+    email,
+  });
+
+  it("isUniqueViolation finds UNIQUE in a wrapped D1 error's cause chain", async () => {
+    const { isUniqueViolation } = await import("~/lib/db-errors.server");
+    const d1 = new Error("D1_ERROR: UNIQUE constraint failed: users.email: SQLITE_CONSTRAINT");
+    const wrapped = new Error("Failed query: update users ...", { cause: d1 });
+    expect(isUniqueViolation(wrapped)).toBe(true);
+    expect(isUniqueViolation(new Error("outer", { cause: wrapped }))).toBe(true);
+    expect(isUniqueViolation(new Error("FOREIGN KEY constraint failed"))).toBe(false);
+    expect(isUniqueViolation("nope")).toBe(false);
+  });
+
+  it("the real Drizzle error for a duplicate email is detected", async () => {
+    const { isUniqueViolation } = await import("~/lib/db-errors.server");
+    await seedUser("dup-real@ucsb.edu", "dup-real", { githubId: 78000 });
+    let caught: unknown;
+    try {
+      await getDb().insert(schema.users).values({
+        githubId: 78001, email: "dup-real@ucsb.edu", handle: "x", createdAt: 1,
+      });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeDefined();
+    expect(isUniqueViolation(caught)).toBe(true);
+  });
+
+  it("a returning user's email change that collides after the check keeps the old email instead of failing", async () => {
+    const { resolveGithubAccount } = await import("~/lib/github-account.server");
+    const id = await seedUser("old-race@ucsb.edu", "old", { githubId: 78010 });
+    const result = await resolveGithubAccount(getDb(), profile(78010, "new-race@ucsb.edu"), {
+      afterLookup: async () => {
+        await seedUser("new-race@ucsb.edu", "~taken", { githubId: null });
+      },
+    });
+    expect(result.ok).toBe(true);
+    const row = await getDb().select().from(schema.users).where(eq(schema.users.id, id)).get();
+    expect(row!.email).toBe("old-race@ucsb.edu");
+    expect(row!.handle).toBe("gh-78010");
+  });
+
+  it("a first GitHub sign-in links an email-only row created between the lookups and the insert", async () => {
+    const { resolveGithubAccount } = await import("~/lib/github-account.server");
+    let createdId = 0;
+    const result = await resolveGithubAccount(getDb(), profile(78020, "late-row@ucsb.edu"), {
+      afterLookup: async () => {
+        createdId = await seedUser("late-row@ucsb.edu", "~late", { githubId: null, name: "Late" });
+      },
+    });
+    expect(result).toMatchObject({ ok: true });
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.user.id).toBe(createdId);
+    const row = await getDb().select().from(schema.users).where(eq(schema.users.id, createdId)).get();
+    expect(row!.githubId).toBe(78020);
+    expect(row!.handle).toBe("gh-78020");
+  });
+
+  it("a first GitHub sign-in refuses with email-in-use when a GitHub-linked row appears between lookup and insert", async () => {
+    const { resolveGithubAccount } = await import("~/lib/github-account.server");
+    const result = await resolveGithubAccount(getDb(), profile(78030, "late-gh@ucsb.edu"), {
+      afterLookup: async () => {
+        await seedUser("late-gh@ucsb.edu", "other", { githubId: 78031 });
+      },
+    });
+    expect(result).toEqual({ ok: false, error: "email-in-use" });
+    const none = await getDb().select().from(schema.users).where(eq(schema.users.githubId, 78030)).get();
+    expect(none).toBeUndefined();
+  });
+});

@@ -17,34 +17,44 @@
  *      Access token via tokens.accessToken() (NOT tokens.idToken(), which would throw).
  *   4. Identity: GitHub REST (GET /user + GET /user/emails).
  *      MUST send User-Agent: ampl-auth — Cloudflare Workers does not auto-set it.
- *   5. Account resolution: upsert-by-github_id (INSERT when absent, UPDATE profile when present).
+ *   5. Account resolution, by github_id first:
+ *        - a row with this github_id → UPDATE its profile; the email changes
+ *          only when no other row has the new address (otherwise it is kept);
+ *        - else a row with this verified email and github_id NULL (an account
+ *          created through an email sign-in link) → link it: set github_id,
+ *          handle and avatar_url on that row, so its id is kept;
+ *        - else a row with this email and a different github_id → refuse
+ *          (error=email-in-use); two GitHub-linked rows are never merged;
+ *        - else INSERT.
  *      Any GitHub user can sign in.
  *   6. Post-login redirect: ABSOLUTE URL via new URL(returnTo, origin) to bypass the /auth
  *      basename prepend that RR v7 adds to relative redirect() calls.
- *   7. Error codes (5): oauth-failed, oauth-cancelled, state-mismatch, no-verified-email, rate-limited.
+ *   7. Error codes (6): oauth-failed, oauth-cancelled, state-mismatch, no-verified-email,
+ *      rate-limited, email-in-use.
  *   8. DB binding: env.AUTH_DB.
  *
  * Threat-model linkages:
  *   - CSRF: github_oauth_state cookie compared to URL state before exchange.
  *   - Unverified email: gate on primary && verified in /user/emails.
  *   - Open redirect: safeReturnTo applied before absolute URL construction.
- *   - Duplicate identity rows: upsert keyed by unique github_id index.
+ *   - Duplicate identity rows: unique github_id and email indexes; linking
+ *     only ever fills a NULL github_id.
  *   - GitHub 403 from missing UA: User-Agent: ampl-auth on all GitHub REST calls.
  *   - Flood: AUTH_RATE_LIMITER per-IP on github-callback:<ip>.
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { redirect } from "react-router";
-import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "~/db/schema";
-import { users } from "~/db/schema";
 import { createGitHubClient, buildRedirectUri } from "~/lib/github-auth.server";
 import { createSessionForUser, sessionCookieHeader, getCookieValue } from "~/sessions.server";
 import { safeReturnTo } from "@ampl/kit/auth";
 import { cloudflareContext } from "~/context";
 import { logError } from "~/lib/logging.server";
+import { normalizeEmail } from "~/lib/email-login.server";
+import { resolveGithubAccount } from "~/lib/github-account.server";
 import { BASENAME } from "~/lib/paths";
 import type { Route } from "./+types/auth.callback";
 
@@ -191,50 +201,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     rejectWithError("no-verified-email", isSecure);
   }
 
-  // ── Upsert-by-github_id ──────────────────────────────────────────────────
-  // SELECT first; INSERT when absent, UPDATE profile + lastSeenAt when present.
-  // The unique index on github_id prevents duplicates at the DB level.
+  // ── Account resolution ───────────────────────────────────────────────────
+  // By github_id first, then by verified email; see resolveGithubAccount.
   const db = drizzle(env.AUTH_DB, { schema });
-  const now = Date.now();
-  const email = primaryEmail!.email.toLowerCase();
-
-  let user = await db
-    .select()
-    .from(users)
-    .where(eq(users.githubId, ghUser!.id))
-    .get();
-
-  if (!user) {
-    // New user — INSERT
-    const [inserted] = await db
-      .insert(users)
-      .values({
-        githubId: ghUser!.id,
-        email,
-        handle: ghUser!.login,
-        name: ghUser!.name ?? null,
-        avatarUrl: ghUser!.avatar_url,
-        createdAt: now,
-        lastSeenAt: now,
-      })
-      .returning();
-    user = inserted;
-  } else {
-    // Returning user — UPDATE profile + lastSeenAt (profile refresh on login)
-    await db
-      .update(users)
-      .set({
-        handle: ghUser!.login,
-        name: ghUser!.name ?? null,
-        avatarUrl: ghUser!.avatar_url,
-        email,
-        lastSeenAt: now,
-      })
-      .where(eq(users.githubId, ghUser!.id));
-  }
+  const resolved = await resolveGithubAccount(db, {
+    githubId: ghUser!.id,
+    login: ghUser!.login,
+    name: ghUser!.name ?? null,
+    avatarUrl: ghUser!.avatar_url,
+    email: normalizeEmail(primaryEmail!.email),
+  });
+  if (!resolved.ok) rejectWithError(resolved.error, isSecure);
+  const user = resolved.user;
 
   // ── Session creation + redirect ───────────────────────────────────────────
-  const created = await createSessionForUser(db, user!.id);
+  const created = await createSessionForUser(db, user.id);
 
   const headers = new Headers();
   headers.append("Set-Cookie", sessionCookieHeader(created.rawCookieValue, isSecure));

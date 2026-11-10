@@ -12,7 +12,8 @@
   },
   "login": {
     "title": "Sign in",
-    "continueWithGithub": "Continue with GitHub"
+    "continueWithGithub": "Continue with GitHub",
+    "or": "or"
   },
   "signedIn": {
     "welcome": "Welcome, {{name}}",
@@ -30,7 +31,13 @@
     "oauth-cancelled": "Sign-in was cancelled.",
     "state-mismatch": "The sign-in session expired. Please try again.",
     "no-verified-email": "Your GitHub account must have a verified primary email address.",
-    "rate-limited": "Too many requests. Please wait a moment and try again."
+    "rate-limited": "Too many requests. Please wait a moment and try again.",
+    "email-invalid": "Enter a valid email address.",
+    "email-domain": "Email sign-in is available only for {{domains}} addresses. For any other address, use Continue with GitHub.",
+    "turnstile-failed": "The security check didn't pass. Please try again.",
+    "email-unavailable": "Email sign-in isn't available right now. Continue with GitHub or try again later.",
+    "email-in-use": "This GitHub account's email address already belongs to another AMPL account. Sign in with that account instead.",
+    "name-required": "Enter your name to continue."
   },
   "nav": {
     "ariaLabel": "Lab site navigation",
@@ -38,5 +45,29 @@
     "projects": "Projects",
     "opportunities": "Opportunities",
     "people": "People"
+  },
+  "emailLogin": {
+    "label": "Email address",
+    "placeholder": "name@{{domain}}",
+    "submit": "Email me a sign-in link",
+    "hint": "Available for {{domains}} addresses.",
+    "sent": {
+      "title": "Check your email",
+      "body": "If that address can sign in here, we have sent it a message. Open the message to finish signing in.",
+      "expiry": "Each link works once and expires after {{minutes}} minutes. If nothing arrives, check your spam folder or request a new link.",
+      "back": "Back to sign-in"
+    },
+    "verify": {
+      "title": "Sign in as {{email}}",
+      "body": "Confirm to finish signing in on this device.",
+      "nameLabel": "Your name",
+      "nameHint": "Other people see this name in the AMPL tools.",
+      "submit": "Sign in",
+      "invalidTitle": "This link can't be used",
+      "invalidBody": "The link has expired, has already been used, or a newer link replaced it. Request a new one from the sign-in page.",
+      "githubTitle": "Sign in with GitHub instead",
+      "githubBody": "You sign in to this account with GitHub. Use Continue with GitHub on the sign-in page.",
+      "toLogin": "Go to sign-in"
+    }
   }
 }

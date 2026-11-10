@@ -7,9 +7,9 @@
  * loaders and actions can reach the D1 database, secrets, and the rate
  * limiter — then stamps a baseline of security headers onto every response:
  * clickjacking protection (`X-Frame-Options`), HTTPS enforcement (HSTS),
- * MIME-sniffing protection, and a conservative referrer policy.
+ * MIME-sniffing protection, and a no-referrer policy.
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { createRequestHandler, RouterContextProvider } from "react-router";
@@ -28,7 +28,9 @@ export default {
     response.headers.set("X-Frame-Options", "DENY");
     response.headers.set("Strict-Transport-Security", "max-age=31536000");
     response.headers.set("X-Content-Type-Options", "nosniff");
-    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    // no-referrer, matching securityMiddleware: a sign-in link carries its
+    // token in the URL, so no response may let the URL leak in a Referer.
+    response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   },
 } satisfies ExportedHandler<Env>;

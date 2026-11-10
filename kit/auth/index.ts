@@ -17,7 +17,7 @@
  * cookie-reading helpers stay private because consumers only ever need to
  * validate cookies, never construct them.
  *
- * @version v0.1.0
+ * @version v0.4.0
  */
 
 import { eq } from "drizzle-orm";
@@ -127,13 +127,18 @@ export async function validateSession(
  * Validates a `return_to` value from a query string or cookie. Returns a safe
  * same-origin path, or "/" if the input is missing, malformed, or suspicious.
  *
+ * The checks run on the value AFTER URL normalization, because that is what a
+ * browser follows: `/x/..//evil.example` normalizes to `//evil.example`, a
+ * protocol-relative URL on another host.
  *
  * Rejects:
  *   - null / empty
  *   - values not starting with "/"
- *   - protocol-relative "//evil"
- *   - backslash (handles `\\evil` and `/path\\evil`)
+ *   - protocol-relative "//evil", before or after normalization
+ *   - backslash (handles `\\evil` and `/path\\evil`), before or after
  *   - embedded schemes (javascript:, http://, etc.) via URL parser
+ *
+ * Returns the normalized pathname + search + hash of the resolved URL.
  *
  * NOTE: returns the full apex pathname (e.g. /paleography/x)
  * — NOT basename-stripped. The callback's absolute-URL redirect handles
@@ -144,10 +149,13 @@ export function safeReturnTo(value: string | null): string {
   if (!value.startsWith("/")) return "/";
   if (value.startsWith("//")) return "/";
   if (value.includes("\\")) return "/";
+  const base = "http://example.invalid";
   try {
-    const u = new URL(value, "http://example.invalid");
-    if (u.origin !== "http://example.invalid") return "/";
-    return u.pathname + u.search;
+    const u = new URL(value, base);
+    if (u.origin !== base) return "/";
+    if (u.pathname.startsWith("//")) return "/";
+    if (u.pathname.includes("\\")) return "/";
+    return u.pathname + u.search + u.hash;
   } catch {
     return "/";
   }

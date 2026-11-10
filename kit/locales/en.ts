@@ -15,6 +15,22 @@
  */
 export default {
   email: {
+    auth: {
+      // Account-access messages rendered by the AuthEmail entrypoint.
+      // {{minutes}} is the link lifetime.
+      linkSubject: "[AMPL] Your sign-in link",
+      linkPreheader: "Use this link to sign in to AMPL.",
+      linkHeading: "Sign in to AMPL",
+      linkBody: "Someone asked for a link to sign in to the AMPL tools with this email address. If it was you, use the button below.",
+      linkButton: "Sign in",
+      linkNote: "The link works once and expires in {{minutes}} minutes. If you didn't ask for it, you can ignore this email.",
+      githubSubject: "[AMPL] Sign in with GitHub",
+      githubPreheader: "You sign in to your AMPL account with GitHub.",
+      githubHeading: "Sign in with GitHub",
+      githubBody: "Someone asked for an email sign-in link for this address. You sign in to the AMPL account with this address through GitHub, so we didn't send a link.",
+      githubButton: "Go to sign-in",
+      githubNote: "If you didn't ask for this, you can ignore this email.",
+    },
     footer: {
       transactional: "This is an automated transactional message from AMPL.",
       tagline: "Archives, Memory, and Preservation Lab · UC Santa Barbara",

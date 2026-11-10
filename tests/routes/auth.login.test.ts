@@ -155,3 +155,56 @@ describe("auth.login page", () => {
     expect(html).toContain('href="/auth/github"');
   });
 });
+
+describe("auth.login page — email sign-in form", () => {
+  const loaderData = {
+    emailEnabled: true,
+    domains: ["ucsb.edu"],
+    turnstileSiteKey: "1x00000000000000000000AA",
+    turnstileAction: "email-login",
+    nonce: "test-nonce",
+  };
+
+  async function render(location: string, data: unknown) {
+    const { default: LoginPage } = await import("~/routes/auth.login");
+    const { StaticRouter } = await import("react-router");
+    return renderToString(
+      React.createElement(
+        StaticRouter,
+        { location },
+        React.createElement(LoginPage as React.ComponentType<any>, { loaderData: data }),
+      ),
+    );
+  }
+
+  it("renders the email form above the GitHub button, with an 'or' divider", async () => {
+    const html = await render("/auth/login?return_to=%2Fpaleography", loaderData);
+    expect(html).toContain('action="/auth/email/request"');
+    expect(html).toContain('method="post"');
+    expect(html).toContain('type="email"');
+    expect(html).toContain('name="return_to"');
+    expect(html).toContain('value="/paleography"');
+    expect(html).toContain('data-sitekey="1x00000000000000000000AA"');
+    expect(html).toContain('data-action="email-login"');
+    expect(html).toMatch(/nonce="test-nonce"/);
+    expect(html).toContain("https://challenges.cloudflare.com/turnstile/v0/api.js");
+    const form = html.indexOf('action="/auth/email/request"');
+    const divider = html.search(/login\.or|>or</);
+    const github = html.indexOf("/auth/github");
+    expect(form).toBeGreaterThan(-1);
+    expect(divider).toBeGreaterThan(form);
+    expect(github).toBeGreaterThan(divider);
+  });
+
+  it("hides the email form and the Turnstile script when email sign-in is off", async () => {
+    const html = await render("/auth/login", { ...loaderData, emailEnabled: false });
+    expect(html).not.toContain("/auth/email/request");
+    expect(html).not.toContain("challenges.cloudflare.com");
+    expect(html).toContain('href="/auth/github"');
+  });
+
+  it("?error=email-domain renders an alert", async () => {
+    const html = await render("/auth/login?error=email-domain", loaderData);
+    expect(html).toContain('role="alert"');
+  });
+});
