@@ -8,7 +8,7 @@
 // (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) are set per environment with
 // `wrangler secret put`, never stored here.
 //
-// Version: v0.1.0
+// Version: v0.4.0
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ampl-auth",
@@ -24,12 +24,28 @@
   ],
   "workers_dev": false,
   // Secrets (per-env via `wrangler secret put`): GITHUB_CLIENT_ID,
-  // GITHUB_CLIENT_SECRET. See .dev.vars.example. (No SESSION_SECRET — opaque
-  // hashed sessions need no signing key; OAuth cookies are validated, not signed.)
+  // GITHUB_CLIENT_SECRET, TURNSTILE_SECRET_KEY. See .dev.vars.example. (No
+  // SESSION_SECRET — opaque hashed sessions need no signing key; OAuth cookies
+  // are validated, not signed.)
+  //
+  // Email sign-in links: off until EMAIL_LOGIN_ENABLED is "true". Only
+  // addresses whose domain is listed in EMAIL_LOGIN_DOMAINS (comma-separated,
+  // exact match) may request a link. TURNSTILE_SITE_KEY is public; leave it
+  // empty until the Turnstile widget exists, and the request form refuses to
+  // send links while it or TURNSTILE_SECRET_KEY is missing.
   "vars": {
     "APP_NAME": "AMPL Auth",
-    "APP_URL": "https://ampl.tools/auth"
+    "APP_URL": "https://ampl.tools/auth",
+    "EMAIL_LOGIN_ENABLED": "true",
+    "EMAIL_LOGIN_DOMAINS": "ucsb.edu,neogranadina.org",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAF7fU9jO-81HQmkO"
   },
+  // Sign-in emails go through the ampl-email Worker's AuthEmail entrypoint,
+  // which renders the two fixed sign-in templates; the Resend key stays in
+  // that Worker. This Worker does not bind the general send().
+  "services": [
+    { "binding": "AUTH_EMAIL", "service": "ampl-email", "entrypoint": "AuthEmail" }
+  ],
   "ratelimits": [
     {
       "name": "AUTH_RATE_LIMITER",
@@ -48,15 +64,24 @@
   "env": {
     "staging": {
       "name": "ampl-auth-staging",
-      // No ampl.tools route on staging; lives only at its workers.dev URL.
-      // routes:[] is explicit — the Vite plugin otherwise merges top-level
-      // routes into named envs.
-      "routes": [],
+      // Staging is served at staging.ampl.tools, the host all staging tools
+      // share, so the host-only session cookie set here reaches them. This
+      // Worker holds the custom domain; each tool adds its own path route.
+      "routes": [
+        { "pattern": "staging.ampl.tools", "custom_domain": true }
+      ],
       "workers_dev": true,
       "vars": {
         "APP_NAME": "AMPL Auth [Staging]",
-        "APP_URL": "https://ampl-auth-staging.neogranadina.workers.dev"
+        "APP_URL": "https://staging.ampl.tools/auth",
+        "EMAIL_LOGIN_ENABLED": "true",
+        "EMAIL_LOGIN_DOMAINS": "ucsb.edu,neogranadina.org",
+        // Cloudflare's always-pass test key; staging only.
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
       },
+      "services": [
+        { "binding": "AUTH_EMAIL", "service": "ampl-email-staging", "entrypoint": "AuthEmail" }
+      ],
       "ratelimits": [
         {
           "name": "AUTH_RATE_LIMITER",

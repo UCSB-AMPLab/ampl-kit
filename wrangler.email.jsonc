@@ -9,7 +9,7 @@
 // environment with `wrangler secret put --config wrangler.email.jsonc`, never
 // stored here.
 //
-// Version: v0.1.0
+// Version: v0.4.0
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ampl-email",
@@ -30,9 +30,12 @@
   //   UNSUB_HMAC_SECRET      — 32-byte random key for unsubscribe tokens
   // Quota ceilings are plain vars (non-secret): they are safe to expose and
   // tunable without a deploy.
+  // AUTH_APP_URL is the ampl-auth URL. The AuthEmail entrypoint sends only
+  // links on its origin.
   "vars": {
     "MONTHLY_QUOTA_CEILING": "2500",
-    "DAILY_QUOTA_CEILING": "90"
+    "DAILY_QUOTA_CEILING": "90",
+    "AUTH_APP_URL": "https://ampl.tools/auth"
   },
   // namespace_id 3 (prod) and 4 (staging) — distinct from ampl-auth's 1/2.
   // Never reuse auth's namespace IDs or the rate limiters will cross-pollinate.
@@ -60,7 +63,8 @@
       "workers_dev": true,
       "vars": {
         "MONTHLY_QUOTA_CEILING": "2500",
-        "DAILY_QUOTA_CEILING": "90"
+        "DAILY_QUOTA_CEILING": "90",
+        "AUTH_APP_URL": "https://staging.ampl.tools"
       },
       "ratelimits": [
         {
