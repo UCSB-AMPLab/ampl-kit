@@ -33,7 +33,7 @@ export const sends = sqliteTable(
   "sends",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    tool: text("tool").notNull(), // "calamus" | "scheduling"
+    tool: text("tool").notNull(), // "calamus" | "scheduling" | "auth"
     recipient: text("recipient").notNull(),
     subject: text("subject").notNull(),
     status: text("status").notNull(), // "sent" | "suppressed" | "quota_exceeded" | "duplicate"

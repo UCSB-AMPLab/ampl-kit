@@ -77,6 +77,15 @@ function makeComplaintPayload(address: string): string {
   });
 }
 
+// Each request gets its own client IP unless a test names one, so this file
+// never shares the rate limiter's "unknown" bucket with other test files that
+// run in the same runtime.
+let ipCounter = 0;
+function nextIp(): string {
+  ipCounter += 1;
+  return `10.88.0.${ipCounter}`;
+}
+
 async function makeSignedRequest(
   body: string,
   secret: string,
@@ -93,7 +102,7 @@ async function makeSignedRequest(
     "svix-timestamp": timestamp,
     "svix-signature": sig,
   };
-  if (ip) headers["CF-Connecting-IP"] = ip;
+  headers["CF-Connecting-IP"] = ip ?? nextIp();
 
   return new Request("https://ampl.tools/email/webhook", {
     method: "POST",
@@ -284,5 +293,86 @@ describe("handleWebhook — missing RESEND_WEBHOOK_SECRET", () => {
       .where(eq(schema.suppressions.address, address))
       .get();
     expect(row).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suppression escalation: complaint > bounce > unsubscribe, never downgraded
+// ---------------------------------------------------------------------------
+
+describe("suppression escalation", () => {
+  async function reasonFor(address: string) {
+    const row = await getEmailDb()
+      .select()
+      .from(schema.suppressions)
+      .where(eq(schema.suppressions.address, address))
+      .get();
+    return row?.reason;
+  }
+  async function seed(address: string, reason: string) {
+    await getEmailDb().insert(schema.suppressions).values({
+      address,
+      reason,
+      source: reason === "unsubscribe" ? "user_request" : "resend_webhook",
+      createdAt: Date.now(),
+    });
+  }
+  async function unsubscribe(address: string) {
+    const { signUnsubToken } = await import("../../app/email/lib/unsub-token");
+    const token = await signUnsubToken(address, env.UNSUB_HMAC_SECRET);
+    const { handleUnsubscribe } = await import("../../app/email/routes/unsubscribe");
+    return handleUnsubscribe(
+      new Request("https://ampl.tools/email/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", "CF-Connecting-IP": nextIp() },
+        body: new URLSearchParams({ token }).toString(),
+      }),
+      env,
+    );
+  }
+
+  it("a bounce after an unsubscribe raises the reason to bounce", async () => {
+    await seed("esc1@example.com", "unsubscribe");
+    const res = await handleWebhook(
+      await makeSignedRequest(makeBouncePayload("esc1@example.com"), env.RESEND_WEBHOOK_SECRET),
+      env,
+    );
+    expect(res.status).toBe(200);
+    expect(await reasonFor("esc1@example.com")).toBe("bounce");
+  });
+
+  it("a complaint after a bounce raises the reason to complaint", async () => {
+    await seed("esc2@example.com", "bounce");
+    await handleWebhook(
+      await makeSignedRequest(makeComplaintPayload("esc2@example.com"), env.RESEND_WEBHOOK_SECRET),
+      env,
+    );
+    expect(await reasonFor("esc2@example.com")).toBe("complaint");
+  });
+
+  it("a bounce after a complaint keeps complaint", async () => {
+    await seed("esc3@example.com", "complaint");
+    await handleWebhook(
+      await makeSignedRequest(makeBouncePayload("esc3@example.com"), env.RESEND_WEBHOOK_SECRET),
+      env,
+    );
+    expect(await reasonFor("esc3@example.com")).toBe("complaint");
+  });
+
+  it("an unsubscribe after a bounce keeps bounce", async () => {
+    await seed("esc4@example.com", "bounce");
+    const res = await unsubscribe("esc4@example.com");
+    expect(res.status).toBe(200);
+    expect(await reasonFor("esc4@example.com")).toBe("bounce");
+  });
+
+  it("the escalated bounce then blocks account-access mail", async () => {
+    await seed("esc5@example.com", "unsubscribe");
+    expect(await isSuppressed(getEmailDb(), "esc5@example.com", { ignoreUnsubscribe: true })).toBe(false);
+    await handleWebhook(
+      await makeSignedRequest(makeBouncePayload("esc5@example.com"), env.RESEND_WEBHOOK_SECRET),
+      env,
+    );
+    expect(await isSuppressed(getEmailDb(), "esc5@example.com", { ignoreUnsubscribe: true })).toBe(true);
   });
 });
